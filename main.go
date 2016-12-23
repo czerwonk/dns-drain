@@ -51,7 +51,7 @@ func printVersionInfo() {
 
 func drain(ipNet *net.IPNet) error {
 	if *dry {
-		log.Println("Using dry run. No record will be changed.")
+		log.Println("Using dry run. No records will be changed.")
 	}
 
 	start := time.Now()
