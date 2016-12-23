@@ -14,13 +14,14 @@ import (
 )
 
 type GoogleDnsClient struct {
-	Project string
-	DryRun  bool
-	service *dns.Service
+	Project    string
+	DryRun     bool
+	ZoneFilter string
+	service    *dns.Service
 }
 
-func NewClient(project string, dryRun bool) *GoogleDnsClient {
-	return &GoogleDnsClient{Project: project, DryRun: dryRun}
+func NewClient(project string, dryRun bool, zoneFilter string) *GoogleDnsClient {
+	return &GoogleDnsClient{Project: project, DryRun: dryRun, ZoneFilter: zoneFilter}
 }
 
 func (client *GoogleDnsClient) Drain(ipNet *net.IPNet, newIp net.IP) error {
@@ -35,17 +36,17 @@ func (client *GoogleDnsClient) Drain(ipNet *net.IPNet, newIp net.IP) error {
 		return err
 	}
 
-	r, err := client.service.ManagedZones.List(client.Project).Do()
+	zones, err := client.getZones()
 	if err != nil {
 		return err
 	}
 
 	done := make(chan bool)
-	for _, z := range r.ManagedZones {
+	for _, z := range zones {
 		go client.drainWithIpNet(z.Name, ipNet, newIp, done)
 	}
 
-	for i := 0; i < len(r.ManagedZones); i++ {
+	for i := 0; i < len(zones); i++ {
 		select {
 		case <-done:
 		case <-time.After(60 * time.Second):
@@ -54,6 +55,22 @@ func (client *GoogleDnsClient) Drain(ipNet *net.IPNet, newIp net.IP) error {
 	}
 
 	return nil
+}
+
+func (client *GoogleDnsClient) getZones() ([]*dns.ManagedZone, error) {
+	r, err := client.service.ManagedZones.List(client.Project).Do()
+	if err != nil {
+		return nil, err
+	}
+
+	zones := make([]*dns.ManagedZone, 0)
+	for _, z := range r.ManagedZones {
+		if len(client.ZoneFilter) == 0 || z.Name == client.ZoneFilter {
+			zones = append(zones, z)
+		}
+	}
+
+	return zones, nil
 }
 
 func (client *GoogleDnsClient) drainWithIpNet(zone string, ipNet *net.IPNet, newIp net.IP, done chan bool) {
