@@ -1,4 +1,4 @@
-# dns-drain[![Build Status](https://travis-ci.org/czerwonk/dns-drain.svg)][travis]
+# dns-drain [![Build Status](https://travis-ci.org/czerwonk/dns-drain.svg)][travis]
 DNS/Frontend Drain with ease
 
 # Install
