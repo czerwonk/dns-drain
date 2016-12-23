@@ -11,6 +11,7 @@ Drain IP 1.2.3.4 in project api-project-xxx
 ```
 dns-drain -gcloud.project=api-project-xxx -ip=1.2.3.4/32
 ```
+IP has to be in CIDR notation at the moment
 
 # Supported providers
 * Google Cloud DNS
