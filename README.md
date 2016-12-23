@@ -1,5 +1,5 @@
 # dns-drain [![Build Status](https://travis-ci.org/czerwonk/dns-drain.svg)][travis]
-DNS/Frontend Drain with ease
+Drain by removing IP/net from records with ease
 
 # Install
 ```
