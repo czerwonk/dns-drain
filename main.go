@@ -8,10 +8,11 @@ import (
 	"os"
 	"time"
 
+	"github.com/czerwonk/dns-drain/changelog"
 	"github.com/czerwonk/dns-drain/gcloud"
 )
 
-const version string = "0.2.1"
+const version string = "0.3"
 
 var (
 	showVersion   = flag.Bool("version", false, "Show version information")
@@ -20,6 +21,7 @@ var (
 	gcloudProject = flag.String("gcloud.project", "", "Project ID for Google Cloud DNS")
 	dry           = flag.Bool("dry", false, "Do not modify DNS records (simulation only)")
 	zoneFilter    = flag.String("zone", "", "Apply only on specific zone")
+	file          = flag.String("file", "drain.txt", "File containing changes (for log or undrain)")
 )
 
 func main() {
@@ -61,14 +63,27 @@ func drain(ipNet *net.IPNet, newIp net.IP) error {
 		log.Println("Using dry run. No records will be changed.")
 	}
 
+	logger, err := changelog.NewFileChangeLogger(*file)
+	if err != nil {
+		return err
+	}
+	defer closeLogger(logger)
+
 	start := time.Now()
 
-	c := gcloud.NewClient(*gcloudProject, *dry, *zoneFilter)
-	err := c.Drain(ipNet, newIp)
+	c := gcloud.NewClient(*gcloudProject, *dry, *zoneFilter, logger)
+	err = c.Drain(ipNet, newIp)
 
 	if err == nil {
 		log.Printf("Finished after %v", time.Since(start))
 	}
 
 	return err
+}
+
+func closeLogger(logger *changelog.FileChangeLogger) {
+	err := logger.Close()
+	if err != nil {
+		log.Printf("ERROR - %s\n", err)
+	}
 }

@@ -10,6 +10,8 @@ import (
 
 	"golang.org/x/oauth2/google"
 
+	"github.com/czerwonk/dns-drain/changelog"
+
 	dns "google.golang.org/api/dns/v1"
 )
 
@@ -18,10 +20,11 @@ type GoogleDnsClient struct {
 	DryRun     bool
 	ZoneFilter string
 	service    *dns.Service
+	logger     changelog.ChangeLogger
 }
 
-func NewClient(project string, dryRun bool, zoneFilter string) *GoogleDnsClient {
-	return &GoogleDnsClient{Project: project, DryRun: dryRun, ZoneFilter: zoneFilter}
+func NewClient(project string, dryRun bool, zoneFilter string, changelogger changelog.ChangeLogger) *GoogleDnsClient {
+	return &GoogleDnsClient{Project: project, DryRun: dryRun, ZoneFilter: zoneFilter, logger: changelogger}
 }
 
 func (client *GoogleDnsClient) Drain(ipNet *net.IPNet, newIp net.IP) error {
@@ -148,5 +151,45 @@ func (client *GoogleDnsClient) updateRecordSet(rec *dns.ResourceRecordSet, zone 
 	c.Additions = append(c.Additions, &updated)
 
 	_, err := client.service.Changes.Create(client.Project, zone, c).Do()
-	return err
+	if err != nil {
+		return err
+	}
+
+	return client.logChanges(rec, zone, datas)
+}
+
+func (client *GoogleDnsClient) logChanges(rec *dns.ResourceRecordSet, zone string, datas []string) error {
+	before := rec.Rrdatas
+	after := datas
+
+	m := make(map[string]int)
+	for _, x := range before {
+		m[x] = -1
+	}
+	for _, y := range after {
+		m[y] += 1
+	}
+
+	for k, v := range m {
+		if v != 0 {
+			err := client.logChange(rec, zone, k, v)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (client *GoogleDnsClient) logChange(rec *dns.ResourceRecordSet, zone string, value string, changeValue int) error {
+	var action string
+	if changeValue == 1 {
+		action = changelog.Add
+	} else {
+		action = changelog.Remove
+	}
+
+	c := changelog.DnsChange{Zone: zone, Record: rec.Name, RecordType: rec.Type, Value: value, Action: action}
+	return client.logger.LogChange("gcloud", c)
 }
