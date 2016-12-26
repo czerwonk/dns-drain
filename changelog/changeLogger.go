@@ -6,6 +6,7 @@ const (
 )
 
 type DnsChange struct {
+	Provider   string
 	Action     string
 	Zone       string
 	Record     string
@@ -14,5 +15,5 @@ type DnsChange struct {
 }
 
 type ChangeLogger interface {
-	LogChange(provider string, change DnsChange) error
+	LogChange(change DnsChange) error
 }

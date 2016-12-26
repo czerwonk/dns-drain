@@ -21,7 +21,7 @@ var (
 	gcloudProject = flag.String("gcloud.project", "", "Project ID for Google Cloud DNS")
 	dry           = flag.Bool("dry", false, "Do not modify DNS records (simulation only)")
 	zoneFilter    = flag.String("zone", "", "Apply only on specific zone")
-	file          = flag.String("file", "drain.txt", "File containing changes (for log or undrain)")
+	file          = flag.String("file", "drain.json", "File containing changes (for log or undrain)")
 )
 
 func main() {
@@ -67,7 +67,7 @@ func drain(ipNet *net.IPNet, newIp net.IP) error {
 	if err != nil {
 		return err
 	}
-	defer closeLogger(logger)
+	defer flushAndCloseLogger(logger)
 
 	start := time.Now()
 
@@ -81,8 +81,13 @@ func drain(ipNet *net.IPNet, newIp net.IP) error {
 	return err
 }
 
-func closeLogger(logger *changelog.FileChangeLogger) {
-	err := logger.Close()
+func flushAndCloseLogger(logger *changelog.FileChangeLogger) {
+	err := logger.Flush()
+	if err != nil {
+		log.Printf("ERROR - %s\n", err)
+	}
+
+	err = logger.Close()
 	if err != nil {
 		log.Printf("ERROR - %s\n", err)
 	}

@@ -190,6 +190,6 @@ func (client *GoogleDnsClient) logChange(rec *dns.ResourceRecordSet, zone string
 		action = changelog.Remove
 	}
 
-	c := changelog.DnsChange{Zone: zone, Record: rec.Name, RecordType: rec.Type, Value: value, Action: action}
-	return client.logger.LogChange("gcloud", c)
+	c := changelog.DnsChange{Provider: "gcloud", Zone: zone, Record: rec.Name, RecordType: rec.Type, Value: value, Action: action}
+	return client.logger.LogChange(c)
 }
