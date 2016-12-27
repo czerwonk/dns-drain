@@ -7,19 +7,6 @@ import (
 	"sync"
 )
 
-type ChangesJson struct {
-	Changes []ChangeJson `json:"changes"`
-}
-
-type ChangeJson struct {
-	Provider   string `json:"provider"`
-	Action     string `json:"action"`
-	Zone       string `json:"zone"`
-	Record     string `json:"record"`
-	RecordType string `json:"recordType"`
-	Value      string `json:"value"`
-}
-
 type FileChangeLogger struct {
 	mutex   sync.Mutex
 	file    *os.File
@@ -45,8 +32,9 @@ func (l *FileChangeLogger) LogChange(c DnsChange) error {
 }
 
 func (l *FileChangeLogger) Flush() error {
-	j := l.getJson()
-	b, err := json.Marshal(j)
+	c := DnsChangeSet{Changes: l.changes}
+
+	b, err := json.Marshal(c)
 
 	if err != nil {
 		return err
@@ -64,17 +52,6 @@ func (l *FileChangeLogger) Flush() error {
 	}
 
 	return nil
-}
-
-func (l *FileChangeLogger) getJson() ChangesJson {
-	changes := make([]ChangeJson, 0)
-
-	for _, x := range l.changes {
-		c := ChangeJson{Provider: x.Provider, Action: x.Action, Zone: x.Zone, Record: x.Record, RecordType: x.RecordType, Value: x.Value}
-		changes = append(changes, c)
-	}
-
-	return ChangesJson{Changes: changes}
 }
 
 func (l *FileChangeLogger) Close() error {
