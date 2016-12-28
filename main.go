@@ -6,10 +6,6 @@ import (
 	"log"
 	"net"
 	"os"
-	"time"
-
-	"github.com/czerwonk/dns-drain/changelog"
-	"github.com/czerwonk/dns-drain/gcloud"
 )
 
 const version string = "0.3"
@@ -22,6 +18,7 @@ var (
 	dry           = flag.Bool("dry", false, "Do not modify DNS records (simulation only)")
 	zoneFilter    = flag.String("zone", "", "Apply only on specific zone")
 	file          = flag.String("file", "drain.json", "File containing changes (for log or undrain)")
+	shouldUndrain = flag.Bool("undrain", false, "Use file to revert changes")
 )
 
 func main() {
@@ -29,7 +26,16 @@ func main() {
 
 	if *showVersion {
 		printVersionInfo()
-		os.Exit(0)
+		return
+	}
+
+	if *shouldUndrain {
+		err := undrain(*file)
+		if err != nil {
+			log.Println(err)
+			os.Exit(1)
+		}
+		return
 	}
 
 	_, ipNet, err := net.ParseCIDR(*ip)
@@ -56,39 +62,4 @@ func main() {
 func printVersionInfo() {
 	fmt.Println("dns-drain")
 	fmt.Printf("Version: %s\n", version)
-}
-
-func drain(ipNet *net.IPNet, newIp net.IP) error {
-	if *dry {
-		log.Println("Using dry run. No records will be changed.")
-	}
-
-	logger, err := changelog.NewFileChangeLogger(*file)
-	if err != nil {
-		return err
-	}
-	defer flushAndCloseLogger(logger)
-
-	start := time.Now()
-
-	c := gcloud.NewClient(*gcloudProject, *dry, *zoneFilter, logger)
-	err = c.Drain(ipNet, newIp)
-
-	if err == nil {
-		log.Printf("Finished after %v", time.Since(start))
-	}
-
-	return err
-}
-
-func flushAndCloseLogger(logger *changelog.FileChangeLogger) {
-	err := logger.Flush()
-	if err != nil {
-		log.Printf("ERROR - %s\n", err)
-	}
-
-	err = logger.Close()
-	if err != nil {
-		log.Printf("ERROR - %s\n", err)
-	}
 }

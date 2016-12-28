@@ -15,7 +15,7 @@ import (
 	dns "google.golang.org/api/dns/v1"
 )
 
-type GoogleDnsClient struct {
+type GoogleDnsDrainer struct {
 	Project    string
 	DryRun     bool
 	ZoneFilter string
@@ -23,11 +23,11 @@ type GoogleDnsClient struct {
 	logger     changelog.ChangeLogger
 }
 
-func NewClient(project string, dryRun bool, zoneFilter string, changelogger changelog.ChangeLogger) *GoogleDnsClient {
-	return &GoogleDnsClient{Project: project, DryRun: dryRun, ZoneFilter: zoneFilter, logger: changelogger}
+func NewDrainer(project string, dryRun bool, zoneFilter string, changelogger changelog.ChangeLogger) *GoogleDnsDrainer {
+	return &GoogleDnsDrainer{Project: project, DryRun: dryRun, ZoneFilter: zoneFilter, logger: changelogger}
 }
 
-func (client *GoogleDnsClient) Drain(ipNet *net.IPNet, newIp net.IP) error {
+func (client *GoogleDnsDrainer) Drain(ipNet *net.IPNet, newIp net.IP) error {
 	ctx := context.Background()
 	c, err := google.DefaultClient(ctx, dns.CloudPlatformScope)
 	if err != nil {
@@ -60,7 +60,7 @@ func (client *GoogleDnsClient) Drain(ipNet *net.IPNet, newIp net.IP) error {
 	return nil
 }
 
-func (client *GoogleDnsClient) getZones() ([]*dns.ManagedZone, error) {
+func (client *GoogleDnsDrainer) getZones() ([]*dns.ManagedZone, error) {
 	r, err := client.service.ManagedZones.List(client.Project).Do()
 	if err != nil {
 		return nil, err
@@ -76,7 +76,7 @@ func (client *GoogleDnsClient) getZones() ([]*dns.ManagedZone, error) {
 	return zones, nil
 }
 
-func (client *GoogleDnsClient) drainWithIpNet(zone string, ipNet *net.IPNet, newIp net.IP, done chan bool) {
+func (client *GoogleDnsDrainer) drainWithIpNet(zone string, ipNet *net.IPNet, newIp net.IP, done chan bool) {
 	defer func() { done <- true }()
 
 	r, err := client.service.ResourceRecordSets.List(client.Project, zone).Do()
@@ -90,7 +90,7 @@ func (client *GoogleDnsClient) drainWithIpNet(zone string, ipNet *net.IPNet, new
 	}
 }
 
-func (client *GoogleDnsClient) handleRecordSet(zone string, rec *dns.ResourceRecordSet, ipNet *net.IPNet, newIp net.IP) {
+func (client *GoogleDnsDrainer) handleRecordSet(zone string, rec *dns.ResourceRecordSet, ipNet *net.IPNet, newIp net.IP) {
 	d := filterWithIpNet(rec, ipNet)
 
 	if len(d) == 0 && newIp == nil {
@@ -135,7 +135,7 @@ func isInDatas(ip net.IP, datas []string) bool {
 	return false
 }
 
-func (client *GoogleDnsClient) updateRecordSet(rec *dns.ResourceRecordSet, zone string, datas []string) error {
+func (client *GoogleDnsDrainer) updateRecordSet(rec *dns.ResourceRecordSet, zone string, datas []string) error {
 	log.Printf("- %s: %s %s\n", rec.Name, rec.Type, rec.Rrdatas)
 	log.Printf("+ %s: %s %s\n", rec.Name, rec.Type, datas)
 
@@ -158,7 +158,7 @@ func (client *GoogleDnsClient) updateRecordSet(rec *dns.ResourceRecordSet, zone 
 	return client.logChanges(rec, zone, datas)
 }
 
-func (client *GoogleDnsClient) logChanges(rec *dns.ResourceRecordSet, zone string, datas []string) error {
+func (client *GoogleDnsDrainer) logChanges(rec *dns.ResourceRecordSet, zone string, datas []string) error {
 	before := rec.Rrdatas
 	after := datas
 
@@ -182,7 +182,7 @@ func (client *GoogleDnsClient) logChanges(rec *dns.ResourceRecordSet, zone strin
 	return nil
 }
 
-func (client *GoogleDnsClient) logChange(rec *dns.ResourceRecordSet, zone string, value string, changeValue int) error {
+func (client *GoogleDnsDrainer) logChange(rec *dns.ResourceRecordSet, zone string, value string, changeValue int) error {
 	var action string
 	if changeValue == 1 {
 		action = changelog.Add
