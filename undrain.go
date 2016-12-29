@@ -12,6 +12,6 @@ func undrain(f string) error {
 		return err
 	}
 
-	u := gcloud.NewUndrainer(*gcloudProject, *dry)
+	u := gcloud.NewUndrainer(*gcloudProject, *dry, *zoneFilter)
 	return u.Undrain(c)
 }

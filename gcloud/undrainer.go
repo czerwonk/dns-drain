@@ -15,13 +15,14 @@ import (
 )
 
 type GoogleDnsUndrainer struct {
-	Project string
-	DryRun  bool
-	service *dns.Service
+	Project    string
+	DryRun     bool
+	zoneFilter string
+	service    *dns.Service
 }
 
-func NewUndrainer(project string, dryRun bool) *GoogleDnsUndrainer {
-	return &GoogleDnsUndrainer{Project: project, DryRun: dryRun}
+func NewUndrainer(project string, dryRun bool, zoneFilter string) *GoogleDnsUndrainer {
+	return &GoogleDnsUndrainer{Project: project, DryRun: dryRun, zoneFilter: zoneFilter}
 }
 
 func (client *GoogleDnsUndrainer) Undrain(changes *changelog.DnsChangeSet) error {
@@ -60,6 +61,10 @@ func (client *GoogleDnsUndrainer) undrain(changes *changelog.DnsChangeSet) error
 
 func (client *GoogleDnsUndrainer) undrainZone(zone string, changes []changelog.DnsChange, done chan bool) error {
 	defer func() { done <- true }()
+
+	if zone != client.zoneFilter {
+		return nil
+	}
 
 	res, err := client.service.ResourceRecordSets.List(client.Project, zone).Do()
 	if err != nil {
