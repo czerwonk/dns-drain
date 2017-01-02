@@ -10,10 +10,6 @@ import (
 )
 
 func drain(ipNet *net.IPNet, newIp net.IP) error {
-	if *dry {
-		log.Println("Using dry run. No records will be changed.")
-	}
-
 	logger, err := changelog.NewFileChangeLogger(*file)
 	if err != nil {
 		return err
@@ -22,7 +18,7 @@ func drain(ipNet *net.IPNet, newIp net.IP) error {
 
 	start := time.Now()
 
-	c := gcloud.NewDrainer(*gcloudProject, *dry, *zoneFilter, logger)
+	c := gcloud.NewDrainer(*gcloudProject, *dry, zoneFilterRegex, logger)
 	err = c.Drain(ipNet, newIp)
 
 	if err == nil {

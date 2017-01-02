@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"regexp"
 	"time"
 
 	"golang.org/x/oauth2/google"
@@ -15,14 +16,14 @@ import (
 )
 
 type GoogleDnsUndrainer struct {
-	Project    string
-	DryRun     bool
-	zoneFilter string
+	project    string
+	dryRun     bool
+	zoneFilter *regexp.Regexp
 	service    *dns.Service
 }
 
-func NewUndrainer(project string, dryRun bool, zoneFilter string) *GoogleDnsUndrainer {
-	return &GoogleDnsUndrainer{Project: project, DryRun: dryRun, zoneFilter: zoneFilter}
+func NewUndrainer(project string, dryRun bool, zoneFilter *regexp.Regexp) *GoogleDnsUndrainer {
+	return &GoogleDnsUndrainer{project: project, dryRun: dryRun, zoneFilter: zoneFilter}
 }
 
 func (client *GoogleDnsUndrainer) Undrain(changes *changelog.DnsChangeSet) error {
@@ -62,11 +63,11 @@ func (client *GoogleDnsUndrainer) undrain(changes *changelog.DnsChangeSet) error
 func (client *GoogleDnsUndrainer) undrainZone(zone string, changes []changelog.DnsChange, done chan bool) error {
 	defer func() { done <- true }()
 
-	if zone != client.zoneFilter {
+	if client.zoneFilter != nil && !client.zoneFilter.MatchString(zone) {
 		return nil
 	}
 
-	res, err := client.service.ResourceRecordSets.List(client.Project, zone).Do()
+	res, err := client.service.ResourceRecordSets.List(client.project, zone).Do()
 	if err != nil {
 		return err
 	}
@@ -146,7 +147,7 @@ func (client *GoogleDnsUndrainer) updateRecordSet(rec *dns.ResourceRecordSet, zo
 	log.Printf("- %s: %s %s\n", rec.Name, rec.Type, rec.Rrdatas)
 	log.Printf("+ %s: %s %s\n", rec.Name, rec.Type, datas)
 
-	if client.DryRun {
+	if client.dryRun {
 		return nil
 	}
 
@@ -157,7 +158,7 @@ func (client *GoogleDnsUndrainer) updateRecordSet(rec *dns.ResourceRecordSet, zo
 	updated.Rrdatas = datas
 	c.Additions = append(c.Additions, &updated)
 
-	_, err := client.service.Changes.Create(client.Project, zone, c).Do()
+	_, err := client.service.Changes.Create(client.project, zone, c).Do()
 	if err != nil {
 		return err
 	}

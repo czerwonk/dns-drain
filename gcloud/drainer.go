@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"regexp"
 	"time"
 
 	"golang.org/x/oauth2/google"
@@ -16,15 +17,15 @@ import (
 )
 
 type GoogleDnsDrainer struct {
-	Project    string
-	DryRun     bool
-	ZoneFilter string
+	project    string
+	dryRun     bool
+	zoneFilter *regexp.Regexp
 	service    *dns.Service
 	logger     changelog.ChangeLogger
 }
 
-func NewDrainer(project string, dryRun bool, zoneFilter string, changelogger changelog.ChangeLogger) *GoogleDnsDrainer {
-	return &GoogleDnsDrainer{Project: project, DryRun: dryRun, ZoneFilter: zoneFilter, logger: changelogger}
+func NewDrainer(project string, dryRun bool, zoneFilter *regexp.Regexp, changelogger changelog.ChangeLogger) *GoogleDnsDrainer {
+	return &GoogleDnsDrainer{project: project, dryRun: dryRun, zoneFilter: zoneFilter, logger: changelogger}
 }
 
 func (client *GoogleDnsDrainer) Drain(ipNet *net.IPNet, newIp net.IP) error {
@@ -61,14 +62,14 @@ func (client *GoogleDnsDrainer) Drain(ipNet *net.IPNet, newIp net.IP) error {
 }
 
 func (client *GoogleDnsDrainer) getZones() ([]*dns.ManagedZone, error) {
-	r, err := client.service.ManagedZones.List(client.Project).Do()
+	r, err := client.service.ManagedZones.List(client.project).Do()
 	if err != nil {
 		return nil, err
 	}
 
 	zones := make([]*dns.ManagedZone, 0)
 	for _, z := range r.ManagedZones {
-		if len(client.ZoneFilter) == 0 || z.Name == client.ZoneFilter {
+		if client.zoneFilter == nil || client.zoneFilter.MatchString(z.Name) {
 			zones = append(zones, z)
 		}
 	}
@@ -79,7 +80,7 @@ func (client *GoogleDnsDrainer) getZones() ([]*dns.ManagedZone, error) {
 func (client *GoogleDnsDrainer) drainWithIpNet(zone string, ipNet *net.IPNet, newIp net.IP, done chan bool) {
 	defer func() { done <- true }()
 
-	r, err := client.service.ResourceRecordSets.List(client.Project, zone).Do()
+	r, err := client.service.ResourceRecordSets.List(client.project, zone).Do()
 	if err != nil {
 		log.Printf("ERROR - %s: %s\n", zone, err)
 		return
@@ -139,7 +140,7 @@ func (client *GoogleDnsDrainer) updateRecordSet(rec *dns.ResourceRecordSet, zone
 	log.Printf("- %s: %s %s\n", rec.Name, rec.Type, rec.Rrdatas)
 	log.Printf("+ %s: %s %s\n", rec.Name, rec.Type, datas)
 
-	if client.DryRun {
+	if client.dryRun {
 		return nil
 	}
 
@@ -150,7 +151,7 @@ func (client *GoogleDnsDrainer) updateRecordSet(rec *dns.ResourceRecordSet, zone
 	updated.Rrdatas = datas
 	c.Additions = append(c.Additions, &updated)
 
-	_, err := client.service.Changes.Create(client.Project, zone, c).Do()
+	_, err := client.service.Changes.Create(client.project, zone, c).Do()
 	if err != nil {
 		return err
 	}
