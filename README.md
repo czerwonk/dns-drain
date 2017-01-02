@@ -18,6 +18,5 @@ IP has to be in CIDR notation at the moment
 
 # Future plans
 * support for more providers
-* undrain functionality
 
 [travis]: https://travis-ci.org/czerwonk/dns-drain
