@@ -9,7 +9,7 @@ import (
 	"regexp"
 )
 
-const version string = "0.4.1"
+const version string = "0.5"
 
 var (
 	showVersion     = flag.Bool("version", false, "Show version information")
@@ -17,10 +17,12 @@ var (
 	newIpStr        = flag.String("new_ip", "", "IP to set instead of removed IP")
 	gcloudProject   = flag.String("gcloud.project", "", "Project ID for Google Cloud DNS")
 	dry             = flag.Bool("dry", false, "Do not modify DNS records (simulation only)")
-	zoneFilter      = flag.String("zone", "", "Apply only on specific zone")
+	zoneFilter      = flag.String("zone", "", "Apply only to zones matching the specifed regex")
+	skipFilter      = flag.String("skip", "", "Skip zones matching the specified regex")
 	file            = flag.String("file", "drain.json", "File containing changes (for log or undrain)")
 	shouldUndrain   = flag.Bool("undrain", false, "Use file to revert changes")
 	zoneFilterRegex *regexp.Regexp
+	skipFilterRegex *regexp.Regexp
 )
 
 func main() {
@@ -31,14 +33,10 @@ func main() {
 		return
 	}
 
-	if len(*zoneFilter) > 0 {
-		r, err := regexp.Compile(*zoneFilter)
-		if err != nil {
-			log.Println(err)
-			os.Exit(1)
-		}
-
-		zoneFilterRegex = r
+	err := parseFilterArgs()
+	if err != nil {
+		log.Println(err)
+		os.Exit(1)
 	}
 
 	if *dry {
@@ -56,6 +54,26 @@ func main() {
 func printVersionInfo() {
 	fmt.Println("dns-drain")
 	fmt.Printf("Version: %s\n", version)
+}
+
+func parseFilterArgs() error {
+	var err error = nil
+
+	if len(*zoneFilter) > 0 {
+		zoneFilterRegex, err = regexp.Compile(*zoneFilter)
+		if err != nil {
+			return err
+		}
+	}
+
+	if len(*skipFilter) > 0 {
+		skipFilterRegex, err = regexp.Compile(*skipFilter)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func startDrain() {

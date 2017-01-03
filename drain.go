@@ -18,7 +18,7 @@ func drain(ipNet *net.IPNet, newIp net.IP) error {
 
 	start := time.Now()
 
-	c := gcloud.NewDrainer(*gcloudProject, *dry, zoneFilterRegex, logger)
+	c := gcloud.NewDrainer(*gcloudProject, *dry, zoneFilterRegex, skipFilterRegex, logger)
 	err = c.Drain(ipNet, newIp)
 
 	if err == nil {

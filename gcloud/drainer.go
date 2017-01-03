@@ -20,12 +20,13 @@ type GoogleDnsDrainer struct {
 	project    string
 	dryRun     bool
 	zoneFilter *regexp.Regexp
+	skipFilter *regexp.Regexp
 	service    *dns.Service
 	logger     changelog.ChangeLogger
 }
 
-func NewDrainer(project string, dryRun bool, zoneFilter *regexp.Regexp, changelogger changelog.ChangeLogger) *GoogleDnsDrainer {
-	return &GoogleDnsDrainer{project: project, dryRun: dryRun, zoneFilter: zoneFilter, logger: changelogger}
+func NewDrainer(project string, dryRun bool, zoneFilter *regexp.Regexp, skipFilter *regexp.Regexp, changelogger changelog.ChangeLogger) *GoogleDnsDrainer {
+	return &GoogleDnsDrainer{project: project, dryRun: dryRun, zoneFilter: zoneFilter, skipFilter: skipFilter, logger: changelogger}
 }
 
 func (client *GoogleDnsDrainer) Drain(ipNet *net.IPNet, newIp net.IP) error {
@@ -69,12 +70,20 @@ func (client *GoogleDnsDrainer) getZones() ([]*dns.ManagedZone, error) {
 
 	zones := make([]*dns.ManagedZone, 0)
 	for _, z := range r.ManagedZones {
-		if client.zoneFilter == nil || client.zoneFilter.MatchString(z.Name) {
+		if !client.matchesSkipFilter(z.Name) && client.matchesZoneFilter(z.Name) {
 			zones = append(zones, z)
 		}
 	}
 
 	return zones, nil
+}
+
+func (client *GoogleDnsDrainer) matchesSkipFilter(zone string) bool {
+	return client.skipFilter != nil && client.skipFilter.MatchString(zone)
+}
+
+func (client *GoogleDnsDrainer) matchesZoneFilter(zone string) bool {
+	return client.zoneFilter == nil || client.zoneFilter.MatchString(zone)
 }
 
 func (client *GoogleDnsDrainer) drainWithIpNet(zone string, ipNet *net.IPNet, newIp net.IP, done chan bool) {

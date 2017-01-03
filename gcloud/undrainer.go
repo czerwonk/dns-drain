@@ -19,11 +19,12 @@ type GoogleDnsUndrainer struct {
 	project    string
 	dryRun     bool
 	zoneFilter *regexp.Regexp
+	skipFilter *regexp.Regexp
 	service    *dns.Service
 }
 
-func NewUndrainer(project string, dryRun bool, zoneFilter *regexp.Regexp) *GoogleDnsUndrainer {
-	return &GoogleDnsUndrainer{project: project, dryRun: dryRun, zoneFilter: zoneFilter}
+func NewUndrainer(project string, dryRun bool, zoneFilter *regexp.Regexp, skipFilter *regexp.Regexp) *GoogleDnsUndrainer {
+	return &GoogleDnsUndrainer{project: project, dryRun: dryRun, zoneFilter: zoneFilter, skipFilter: skipFilter}
 }
 
 func (client *GoogleDnsUndrainer) Undrain(changes *changelog.DnsChangeSet) error {
@@ -62,6 +63,10 @@ func (client *GoogleDnsUndrainer) undrain(changes *changelog.DnsChangeSet) error
 
 func (client *GoogleDnsUndrainer) undrainZone(zone string, changes []changelog.DnsChange, done chan bool) error {
 	defer func() { done <- true }()
+
+	if client.skipFilter != nil && client.skipFilter.MatchString(zone) {
+		return nil
+	}
 
 	if client.zoneFilter != nil && !client.zoneFilter.MatchString(zone) {
 		return nil
