@@ -7,12 +7,17 @@ go get github.com/czerwonk/dns-drain
 ```
 # Usage
 
-## Drain IP 1.2.3.4 in project api-project-xxx
+Drain IP 1.2.3.4 in project api-project-xxx by removing IP from records
 ```
 dns-drain -gcloud.project=api-project-xxx -ip=1.2.3.4/32
 ``` 
 
-## Undrain by using json file written in drain process
+Drain IP 1.2.3.4 in project api-project-xxx by replacing IP with 1.2.3.5
+```
+dns-drain -gcloud.project=api-project-xxx -ip=1.2.3.4/32 -new_ip=1.2.3.5
+```
+
+Undrain by using json file written in drain process
 ```
 dns-drain -undrain -gcloud.project=api-project-xxx
 ```
