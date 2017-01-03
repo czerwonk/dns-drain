@@ -19,14 +19,14 @@ dns-drain -undrain -gcloud.project=api-project-xxx
 
 # Parameters
 
-Name        | Description |Default
-------------|-------------|-------------
--ip | define which IPs/nets in records should be matched  (has to be in CIDR notation at the moment) |
--dry | simulation only | false
--zone | apply changes for specific zones only |
--skip | skip specific zones | 
--new_ip | set a replacement IP (IP only) |
--file | input (undrain) or output (drain) file | drain.json
+Name        | Description
+------------|------------
+-ip | define which IPs/nets in records should be matched  (has to be in CIDR notation at the moment)
+-dry | simulation only
+-zone | apply changes for specific zones only
+-skip | skip specific zones
+-new_ip | set a replacement IP (IP only)
+-file | input (undrain) or output (drain) file (default: drain.json)
 
 # Supported providers
 * Google Cloud DNS
