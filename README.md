@@ -17,13 +17,15 @@ dns-drain -gcloud.project=api-project-xxx -ip=1.2.3.4/32
 dns-drain -undrain -gcloud.project=api-project-xxx
 ```
 
-## Parameters
+# Parameters
 
-* Use -ip to define which IPs/nets in records should be matched  (has to be in CIDR notation at the moment).
-* Use -dry for simulation only.
-* Use -zone to apply changes for specific zones only
-* Use -skip to skip specific zones
-* Use -new_ip to set a replacement IP (IP only)
+Name     | Description
+---------|-------------
+-ip | define which IPs/nets in records should be matched  (has to be in CIDR notation at the moment)
+-dry | simulation only
+-zone | apply changes for specific zones only
+-skip | skip specific zones
+-new_ip | set a replacement IP (IP only)
 
 # Supported providers
 * Google Cloud DNS
