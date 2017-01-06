@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 	"net"
-	"time"
 
 	"github.com/czerwonk/dns-drain/changelog"
 	"github.com/czerwonk/dns-drain/gcloud"
@@ -16,16 +15,8 @@ func drain(ipNet *net.IPNet, newIp net.IP) error {
 	}
 	defer flushAndCloseLogger(logger)
 
-	start := time.Now()
-
 	c := gcloud.NewDrainer(*gcloudProject, *dry, zoneFilterRegex, skipFilterRegex, logger)
-	err = c.Drain(ipNet, newIp)
-
-	if err == nil {
-		log.Printf("Finished after %v", time.Since(start))
-	}
-
-	return err
+	return c.Drain(ipNet, newIp)
 }
 
 func flushAndCloseLogger(logger *changelog.FileChangeLogger) {

@@ -1,15 +1,17 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"log"
 	"net"
 	"os"
 	"regexp"
+	"time"
 )
 
-const version string = "0.5"
+const version string = "0.5.1"
 
 var (
 	showVersion     = flag.Bool("version", false, "Show version information")
@@ -43,12 +45,20 @@ func main() {
 		log.Println("Using dry run. No records will be changed.")
 	}
 
+	start := time.Now()
+
 	if *shouldUndrain {
-		startUndrain()
-		return
+		err = undrain(*file)
+	} else {
+		err = startDrain()
 	}
 
-	startDrain()
+	if err != nil {
+		log.Printf("ERROR - %s\n", err)
+		os.Exit(1)
+	}
+
+	log.Printf("Finished after %v", time.Since(start))
 }
 
 func printVersionInfo() {
@@ -76,14 +86,15 @@ func parseFilterArgs() error {
 	return nil
 }
 
-func startDrain() {
+func startDrain() error {
 	_, ipNet, err := net.ParseCIDR(*ip)
 	if err != nil {
 		log.Println(err)
 		os.Exit(1)
 	}
+
 	if ipNet == nil {
-		log.Println("Please use CIDR notation")
+		return errors.New("Please use CIDR notation")
 	}
 
 	var newIp net.IP
@@ -91,17 +102,5 @@ func startDrain() {
 		newIp = net.ParseIP(*newIpStr)
 	}
 
-	err = drain(ipNet, newIp)
-	if err != nil {
-		log.Printf("ERROR - %s\n", err)
-		os.Exit(1)
-	}
-}
-
-func startUndrain() {
-	err := undrain(*file)
-	if err != nil {
-		log.Println(err)
-		os.Exit(1)
-	}
+	return drain(ipNet, newIp)
 }
