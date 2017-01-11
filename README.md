@@ -26,7 +26,7 @@ dns-drain -undrain -gcloud.project=api-project-xxx
 
 Name        | Description
 ------------|------------
--ip | define which IPs/nets in records should be matched  (has to be in CIDR notation at the moment)
+-ip | define which IPs/nets in records should be matched
 -dry | simulation only
 -zone | apply changes for specific zones only
 -skip | skip specific zones
