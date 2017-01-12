@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"reflect"
 	"regexp"
 	"time"
 
@@ -149,6 +150,10 @@ func findRecordSet(name, recordType string, records []*dns.ResourceRecordSet) *d
 }
 
 func (client *GoogleDnsUndrainer) updateRecordSet(rec *dns.ResourceRecordSet, zone string, datas []string) error {
+	if reflect.DeepEqual(rec.Rrdatas, datas) {
+		return nil
+	}
+
 	log.Printf("- %s: %s %s\n", rec.Name, rec.Type, rec.Rrdatas)
 	log.Printf("+ %s: %s %s\n", rec.Name, rec.Type, datas)
 
