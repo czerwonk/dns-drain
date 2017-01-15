@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"reflect"
 	"regexp"
 	"time"
 
@@ -147,25 +146,8 @@ func isInDatas(ip net.IP, datas []string) bool {
 }
 
 func (client *GoogleDnsDrainer) updateRecordSet(rec *dns.ResourceRecordSet, zone string, datas []string) error {
-	if reflect.DeepEqual(rec.Rrdatas, datas) {
-		return nil
-	}
-
-	log.Printf("- %s: %s %s\n", rec.Name, rec.Type, rec.Rrdatas)
-	log.Printf("+ %s: %s %s\n", rec.Name, rec.Type, datas)
-
-	if client.dryRun {
-		return nil
-	}
-
-	c := &dns.Change{Additions: make([]*dns.ResourceRecordSet, 0), Deletions: make([]*dns.ResourceRecordSet, 0)}
-	c.Deletions = append(c.Deletions, rec)
-
-	updated := *rec
-	updated.Rrdatas = datas
-	c.Additions = append(c.Additions, &updated)
-
-	_, err := client.service.Changes.Create(client.project, zone, c).Do()
+	c := &updateContext{service: client.service, project: client.project, zone: zone, dryRun: client.dryRun}
+	err := updateRecordSet(rec, datas, c)
 	if err != nil {
 		return err
 	}
