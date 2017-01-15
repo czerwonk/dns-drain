@@ -23,6 +23,7 @@ type GoogleDnsDrainer struct {
 	skipFilter *regexp.Regexp
 	service    *dns.Service
 	logger     changelog.ChangeLogger
+	updater    *recordUpdater
 }
 
 func NewDrainer(project string, dryRun bool, zoneFilter *regexp.Regexp, skipFilter *regexp.Regexp, changelogger changelog.ChangeLogger) *GoogleDnsDrainer {
@@ -40,6 +41,8 @@ func (client *GoogleDnsDrainer) Drain(ipNet *net.IPNet, newIp net.IP) error {
 	if err != nil {
 		return err
 	}
+
+	client.updater = &recordUpdater{service: client.service, project: client.project, dryRun: client.dryRun}
 
 	zones, err := client.getZones()
 	if err != nil {
@@ -146,8 +149,7 @@ func isInDatas(ip net.IP, datas []string) bool {
 }
 
 func (client *GoogleDnsDrainer) updateRecordSet(rec *dns.ResourceRecordSet, zone string, datas []string) error {
-	c := &updateContext{service: client.service, project: client.project, zone: zone, dryRun: client.dryRun}
-	err := updateRecordSet(rec, datas, c)
+	err := client.updater.updateRecordSet(zone, rec, datas)
 	if err != nil {
 		return err
 	}

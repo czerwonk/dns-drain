@@ -21,6 +21,7 @@ type GoogleDnsUndrainer struct {
 	zoneFilter *regexp.Regexp
 	skipFilter *regexp.Regexp
 	service    *dns.Service
+	updater    *recordUpdater
 }
 
 func NewUndrainer(project string, dryRun bool, zoneFilter *regexp.Regexp, skipFilter *regexp.Regexp) *GoogleDnsUndrainer {
@@ -38,6 +39,8 @@ func (client *GoogleDnsUndrainer) Undrain(changes *changelog.DnsChangeSet) error
 	if err != nil {
 		return err
 	}
+
+	client.updater = &recordUpdater{service: client.service, project: client.project, dryRun: client.dryRun}
 
 	return client.undrain(changes)
 }
@@ -149,8 +152,7 @@ func findRecordSet(name, recordType string, records []*dns.ResourceRecordSet) *d
 }
 
 func (client *GoogleDnsUndrainer) updateRecordSet(rec *dns.ResourceRecordSet, zone string, datas []string) error {
-	c := &updateContext{service: client.service, project: client.project, zone: zone, dryRun: client.dryRun}
-	err := updateRecordSet(rec, datas, c)
+	err := client.updater.updateRecordSet(zone, rec, datas)
 	if err != nil {
 		return err
 	}
