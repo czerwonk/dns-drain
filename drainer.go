@@ -3,5 +3,5 @@ package main
 import "net"
 
 type Drainer interface {
-	drain(ipNet *net.IPNet, newIp net.IP) error
+	Drain(ipNet *net.IPNet, newIp net.IP) error
 }
