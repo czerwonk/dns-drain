@@ -19,6 +19,7 @@ var (
 	dry             = flag.Bool("dry", false, "Do not modify DNS records (simulation only)")
 	zoneFilter      = flag.String("zone", "", "Apply only to zones matching the specifed regex")
 	skipFilter      = flag.String("skip", "", "Skip zones matching the specified regex")
+	typeFilter      = flag.String("type", "", "Record type to change")
 	file            = flag.String("file", "drain.json", "File containing changes (for log or undrain)")
 	shouldUndrain   = flag.Bool("undrain", false, "Use file to revert changes")
 	value           = flag.String("value", "", "Value to replace in DNS data")

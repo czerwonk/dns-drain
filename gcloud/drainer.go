@@ -21,6 +21,7 @@ type GoogleDnsDrainer struct {
 	dryRun     bool
 	zoneFilter *regexp.Regexp
 	skipFilter *regexp.Regexp
+	typeFilter string
 	service    *dns.Service
 	logger     changelog.ChangeLogger
 	updater    *recordUpdater
@@ -28,8 +29,8 @@ type GoogleDnsDrainer struct {
 
 type DrainFilter func(*dns.ResourceRecordSet) []string
 
-func NewDrainer(project string, dryRun bool, zoneFilter *regexp.Regexp, skipFilter *regexp.Regexp, changelogger changelog.ChangeLogger) *GoogleDnsDrainer {
-	return &GoogleDnsDrainer{project: project, dryRun: dryRun, zoneFilter: zoneFilter, skipFilter: skipFilter, logger: changelogger}
+func NewDrainer(project string, dryRun bool, zoneFilter *regexp.Regexp, skipFilter *regexp.Regexp, typeFilter string, changelogger changelog.ChangeLogger) *GoogleDnsDrainer {
+	return &GoogleDnsDrainer{project: project, dryRun: dryRun, zoneFilter: zoneFilter, typeFilter: typeFilter, skipFilter: skipFilter, logger: changelogger}
 }
 
 func (client *GoogleDnsDrainer) DrainWithIpNet(ipNet *net.IPNet, newIp net.IP) error {
@@ -127,6 +128,10 @@ func (client *GoogleDnsDrainer) drainForZone(zone string, filter DrainFilter, ne
 }
 
 func (client *GoogleDnsDrainer) handleRecordSet(zone string, rec *dns.ResourceRecordSet, newValue string, filter DrainFilter) {
+	if len(client.typeFilter) > 0 && client.typeFilter != rec.Type {
+		return
+	}
+
 	d := filter(rec)
 
 	if len(d) == 0 && len(newValue) == 0 {
