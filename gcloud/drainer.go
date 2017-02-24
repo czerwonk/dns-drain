@@ -26,11 +26,21 @@ type GoogleDnsDrainer struct {
 	updater    *recordUpdater
 }
 
+type ZoneHandlerFunc func(*dns.ManagedZone, chan bool)
+
 func NewDrainer(project string, dryRun bool, zoneFilter *regexp.Regexp, skipFilter *regexp.Regexp, changelogger changelog.ChangeLogger) *GoogleDnsDrainer {
 	return &GoogleDnsDrainer{project: project, dryRun: dryRun, zoneFilter: zoneFilter, skipFilter: skipFilter, logger: changelogger}
 }
 
 func (client *GoogleDnsDrainer) Drain(ipNet *net.IPNet, newIp net.IP) error {
+	handlerFunc := func(z *dns.ManagedZone, done chan bool) {
+		client.drainWithIpNet(z.Name, ipNet, newIp, done)
+	}
+
+	return client.performForZones(handlerFunc)
+}
+
+func (client *GoogleDnsDrainer) performForZones(handlerFunc ZoneHandlerFunc) error {
 	ctx := context.Background()
 	c, err := google.DefaultClient(ctx, dns.CloudPlatformScope)
 	if err != nil {
@@ -51,7 +61,7 @@ func (client *GoogleDnsDrainer) Drain(ipNet *net.IPNet, newIp net.IP) error {
 
 	done := make(chan bool)
 	for _, z := range zones {
-		go client.drainWithIpNet(z.Name, ipNet, newIp, done)
+		go handlerFunc(z, done)
 	}
 
 	for i := 0; i < len(zones); i++ {
