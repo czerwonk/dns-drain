@@ -21,7 +21,10 @@ func drain() error {
 }
 
 func drainWithValue() error {
-	return nil
+	actionFunc := func(d Drainer) error {
+		return d.DrainWithValue(*value, *newValue)
+	}
+	return performDrain(actionFunc)
 }
 
 func drainWithIpNet() error {

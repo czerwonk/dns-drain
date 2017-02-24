@@ -26,21 +26,34 @@ type GoogleDnsDrainer struct {
 	updater    *recordUpdater
 }
 
-type ZoneHandlerFunc func(*dns.ManagedZone, chan bool)
+type DrainFilter func(*dns.ResourceRecordSet) []string
 
 func NewDrainer(project string, dryRun bool, zoneFilter *regexp.Regexp, skipFilter *regexp.Regexp, changelogger changelog.ChangeLogger) *GoogleDnsDrainer {
 	return &GoogleDnsDrainer{project: project, dryRun: dryRun, zoneFilter: zoneFilter, skipFilter: skipFilter, logger: changelogger}
 }
 
 func (client *GoogleDnsDrainer) DrainWithIpNet(ipNet *net.IPNet, newIp net.IP) error {
-	handlerFunc := func(z *dns.ManagedZone, done chan bool) {
-		client.drainWithIpNet(z.Name, ipNet, newIp, done)
+	filter := func(rec *dns.ResourceRecordSet) []string {
+		return filterWithIpNet(rec, ipNet)
 	}
 
-	return client.performForZones(handlerFunc)
+	newValue := ""
+	if newIp != nil {
+		newValue = newIp.String()
+	}
+
+	return client.performForZones(filter, newValue)
 }
 
-func (client *GoogleDnsDrainer) performForZones(handlerFunc ZoneHandlerFunc) error {
+func (client *GoogleDnsDrainer) DrainWithValue(value string, newValue string) error {
+	filter := func(rec *dns.ResourceRecordSet) []string {
+		return filterWithValue(rec, value)
+	}
+
+	return client.performForZones(filter, newValue)
+}
+
+func (client *GoogleDnsDrainer) performForZones(filter DrainFilter, newValue string) error {
 	ctx := context.Background()
 	c, err := google.DefaultClient(ctx, dns.CloudPlatformScope)
 	if err != nil {
@@ -61,7 +74,7 @@ func (client *GoogleDnsDrainer) performForZones(handlerFunc ZoneHandlerFunc) err
 
 	done := make(chan bool)
 	for _, z := range zones {
-		go handlerFunc(z, done)
+		go client.drainForZone(z.Name, filter, newValue, done)
 	}
 
 	for i := 0; i < len(zones); i++ {
@@ -99,7 +112,7 @@ func (client *GoogleDnsDrainer) matchesZoneFilter(zone string) bool {
 	return client.zoneFilter == nil || client.zoneFilter.MatchString(zone)
 }
 
-func (client *GoogleDnsDrainer) drainWithIpNet(zone string, ipNet *net.IPNet, newIp net.IP, done chan bool) {
+func (client *GoogleDnsDrainer) drainForZone(zone string, filter DrainFilter, newValue string, done chan bool) {
 	defer func() { done <- true }()
 
 	r, err := client.service.ResourceRecordSets.List(client.project, zone).Do()
@@ -109,14 +122,14 @@ func (client *GoogleDnsDrainer) drainWithIpNet(zone string, ipNet *net.IPNet, ne
 	}
 
 	for _, rec := range r.Rrsets {
-		client.handleRecordSet(zone, rec, ipNet, newIp)
+		client.handleRecordSet(zone, rec, newValue, filter)
 	}
 }
 
-func (client *GoogleDnsDrainer) handleRecordSet(zone string, rec *dns.ResourceRecordSet, ipNet *net.IPNet, newIp net.IP) {
-	d := filterWithIpNet(rec, ipNet)
+func (client *GoogleDnsDrainer) handleRecordSet(zone string, rec *dns.ResourceRecordSet, newValue string, filter DrainFilter) {
+	d := filter(rec)
 
-	if len(d) == 0 && newIp == nil {
+	if len(d) == 0 && len(newValue) == 0 {
 		log.Printf("WARN - %s %s: Only one IP assigned to record. Can not drain!\n", rec.Type, rec.Name)
 		return
 	}
@@ -125,14 +138,26 @@ func (client *GoogleDnsDrainer) handleRecordSet(zone string, rec *dns.ResourceRe
 		return
 	}
 
-	if newIp != nil && !isInDatas(newIp, d) {
-		d = append(d, newIp.String())
+	if len(newValue) > 0 && !isInDatas(newValue, d) {
+		d = append(d, newValue)
 	}
 
 	err := client.updateRecordSet(rec, zone, d)
 	if err != nil {
 		log.Printf("ERROR - %s: %s", rec.Name, err)
 	}
+}
+
+func filterWithValue(rec *dns.ResourceRecordSet, value string) []string {
+	res := make([]string, 0)
+
+	for _, x := range rec.Rrdatas {
+		if x != value {
+			res = append(res, x)
+		}
+	}
+
+	return res
 }
 
 func filterWithIpNet(rec *dns.ResourceRecordSet, ipNet *net.IPNet) []string {
@@ -148,9 +173,9 @@ func filterWithIpNet(rec *dns.ResourceRecordSet, ipNet *net.IPNet) []string {
 	return res
 }
 
-func isInDatas(ip net.IP, datas []string) bool {
+func isInDatas(value string, datas []string) bool {
 	for _, x := range datas {
-		if x == ip.String() {
+		if x == value {
 			return true
 		}
 	}
