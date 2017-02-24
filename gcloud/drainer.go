@@ -32,7 +32,7 @@ func NewDrainer(project string, dryRun bool, zoneFilter *regexp.Regexp, skipFilt
 	return &GoogleDnsDrainer{project: project, dryRun: dryRun, zoneFilter: zoneFilter, skipFilter: skipFilter, logger: changelogger}
 }
 
-func (client *GoogleDnsDrainer) Drain(ipNet *net.IPNet, newIp net.IP) error {
+func (client *GoogleDnsDrainer) DrainWithIpNet(ipNet *net.IPNet, newIp net.IP) error {
 	handlerFunc := func(z *dns.ManagedZone, done chan bool) {
 		client.drainWithIpNet(z.Name, ipNet, newIp, done)
 	}

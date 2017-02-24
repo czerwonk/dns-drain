@@ -16,7 +16,7 @@ func drain(ipNet *net.IPNet, newIp net.IP) error {
 	defer flushAndCloseLogger(logger)
 
 	c := gcloud.NewDrainer(*gcloudProject, *dry, zoneFilterRegex, skipFilterRegex, logger)
-	return c.Drain(ipNet, newIp)
+	return c.DrainWithIpNet(ipNet, newIp)
 }
 
 func flushAndCloseLogger(logger *changelog.FileChangeLogger) {
