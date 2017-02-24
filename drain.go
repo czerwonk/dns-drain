@@ -10,7 +10,21 @@ import (
 	"github.com/czerwonk/dns-drain/gcloud"
 )
 
+type DrainActionFunc func(Drainer) error
+
 func drain() error {
+	if len(*value) > 0 {
+		return drainWithValue()
+	} else {
+		return drainWithIpNet()
+	}
+}
+
+func drainWithValue() error {
+	return nil
+}
+
+func drainWithIpNet() error {
 	ipNet, err := getNetFromIp()
 	if err != nil {
 		log.Println(err)
@@ -22,7 +36,10 @@ func drain() error {
 		newIp = net.ParseIP(*newIpStr)
 	}
 
-	return drainByIpNet(ipNet, newIp)
+	actionFunc := func(d Drainer) error {
+		return d.DrainWithIpNet(ipNet, newIp)
+	}
+	return performDrain(actionFunc)
 }
 
 func getNetFromIp() (*net.IPNet, error) {
@@ -49,7 +66,7 @@ func getNetFromIp() (*net.IPNet, error) {
 	return ipNet, err
 }
 
-func drainByIpNet(ipNet *net.IPNet, newIp net.IP) error {
+func performDrain(actionFunc DrainActionFunc) error {
 	logger, err := changelog.NewFileChangeLogger(*file)
 	if err != nil {
 		return err
@@ -57,7 +74,7 @@ func drainByIpNet(ipNet *net.IPNet, newIp net.IP) error {
 	defer flushAndCloseLogger(logger)
 
 	c := gcloud.NewDrainer(*gcloudProject, *dry, zoneFilterRegex, skipFilterRegex, logger)
-	return c.DrainWithIpNet(ipNet, newIp)
+	return actionFunc(c)
 }
 
 func flushAndCloseLogger(logger *changelog.FileChangeLogger) {
