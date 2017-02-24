@@ -130,7 +130,7 @@ func (client *GoogleDnsDrainer) handleRecordSet(zone string, rec *dns.ResourceRe
 	d := filter(rec)
 
 	if len(d) == 0 && len(newValue) == 0 {
-		log.Printf("WARN - %s %s: Only one IP assigned to record. Can not drain!\n", rec.Type, rec.Name)
+		log.Printf("WARN - %s %s: Only one value assigned to record. Can not drain!\n", rec.Type, rec.Name)
 		return
 	}
 

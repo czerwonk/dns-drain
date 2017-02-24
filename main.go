@@ -22,7 +22,7 @@ var (
 	file            = flag.String("file", "drain.json", "File containing changes (for log or undrain)")
 	shouldUndrain   = flag.Bool("undrain", false, "Use file to revert changes")
 	value           = flag.String("value", "", "Value to replace in DNS data")
-	newValue        = flag.String("newValue", "", "Value to replace with in DNS data")
+	newValue        = flag.String("new_value", "", "Value to replace with in DNS data")
 	zoneFilterRegex *regexp.Regexp
 	skipFilterRegex *regexp.Regexp
 )
