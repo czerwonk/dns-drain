@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"net"
 	"os"
 	"regexp"
 	"time"
@@ -22,6 +21,8 @@ var (
 	skipFilter      = flag.String("skip", "", "Skip zones matching the specified regex")
 	file            = flag.String("file", "drain.json", "File containing changes (for log or undrain)")
 	shouldUndrain   = flag.Bool("undrain", false, "Use file to revert changes")
+	value           = flag.String("value", "", "Value to replace in DNS data")
+	newValue        = flag.String("newValue", "", "Value to replace with in DNS data")
 	zoneFilterRegex *regexp.Regexp
 	skipFilterRegex *regexp.Regexp
 )
@@ -49,7 +50,7 @@ func main() {
 	if *shouldUndrain {
 		err = undrain(*file)
 	} else {
-		err = startDrain()
+		err = drain()
 	}
 
 	if err != nil {
@@ -83,43 +84,4 @@ func parseFilterArgs() error {
 	}
 
 	return nil
-}
-
-func startDrain() error {
-	ipNet, err := getNetFromIp()
-	if err != nil {
-		log.Println(err)
-		os.Exit(1)
-	}
-
-	var newIp net.IP
-	if len(*newIpStr) > 0 {
-		newIp = net.ParseIP(*newIpStr)
-	}
-
-	return drain(ipNet, newIp)
-}
-
-func getNetFromIp() (*net.IPNet, error) {
-	_, ipNet, err := net.ParseCIDR(*ip)
-
-	if err != nil {
-		ipAddr := net.ParseIP(*ip)
-		if len(ipAddr) == 0 {
-			return nil, err
-		}
-
-		var e error
-		if ipAddr.To4() != nil {
-			_, ipNet, e = net.ParseCIDR(fmt.Sprintf("%s/32", ipAddr))
-		} else {
-			_, ipNet, e = net.ParseCIDR(fmt.Sprintf("%s/128", ipAddr))
-		}
-
-		if e == nil {
-			err = nil
-		}
-	}
-
-	return ipNet, err
 }
