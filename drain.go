@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -13,6 +14,10 @@ import (
 type DrainActionFunc func(Drainer) error
 
 func drain() error {
+	if modeIsAmbigous() {
+		return errors.New("Mode is ambigous. Please use either ip, value or regex parameter.")
+	}
+
 	if len(*value) > 0 {
 		return drainWithValue()
 	}
@@ -22,6 +27,24 @@ func drain() error {
 	}
 
 	return drainWithIpNet()
+}
+
+func modeIsAmbigous() bool {
+	i := 0
+
+	if len(*value) > 0 {
+		i++
+	}
+
+	if len(*regexString) > 0 {
+		i++
+	}
+
+	if len(*ip) > 0 {
+		i++
+	}
+
+	return i != 1
 }
 
 func drainWithRegex() error {
