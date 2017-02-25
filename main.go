@@ -22,7 +22,8 @@ var (
 	typeFilter      = flag.String("type", "", "Record type to change")
 	file            = flag.String("file", "drain.json", "File containing changes (for log or undrain)")
 	shouldUndrain   = flag.Bool("undrain", false, "Use file to revert changes")
-	value           = flag.String("value", "", "Value to replace in DNS data")
+	value           = flag.String("value", "", "Value to replace/replace in DNS data")
+	regexString     = flag.String("regex", "", "Regex to find data in DNS records to remove/replace")
 	newValue        = flag.String("new_value", "", "Value to replace with in DNS data")
 	zoneFilterRegex *regexp.Regexp
 	skipFilterRegex *regexp.Regexp

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"os"
+	"regexp"
 
 	"github.com/czerwonk/dns-drain/changelog"
 	"github.com/czerwonk/dns-drain/gcloud"
@@ -15,9 +15,25 @@ type DrainActionFunc func(Drainer) error
 func drain() error {
 	if len(*value) > 0 {
 		return drainWithValue()
-	} else {
-		return drainWithIpNet()
 	}
+
+	if len(*regexString) > 0 {
+		return drainWithRegex()
+	}
+
+	return drainWithIpNet()
+}
+
+func drainWithRegex() error {
+	regex, err := regexp.Compile(*regexString)
+	if err != nil {
+		return err
+	}
+
+	actionFunc := func(d Drainer) error {
+		return d.DrainWithRegex(regex, *newValue)
+	}
+	return performDrain(actionFunc)
 }
 
 func drainWithValue() error {
@@ -30,8 +46,7 @@ func drainWithValue() error {
 func drainWithIpNet() error {
 	ipNet, err := getNetFromIp()
 	if err != nil {
-		log.Println(err)
-		os.Exit(1)
+		return err
 	}
 
 	var newIp net.IP

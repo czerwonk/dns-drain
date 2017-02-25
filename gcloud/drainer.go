@@ -54,6 +54,14 @@ func (client *GoogleDnsDrainer) DrainWithValue(value string, newValue string) er
 	return client.performForZones(filter, newValue)
 }
 
+func (client *GoogleDnsDrainer) DrainWithRegex(regex *regexp.Regexp, newValue string) error {
+	filter := func(rec *dns.ResourceRecordSet) []string {
+		return filterWithRegex(rec, regex)
+	}
+
+	return client.performForZones(filter, newValue)
+}
+
 func (client *GoogleDnsDrainer) performForZones(filter DrainFilter, newValue string) error {
 	ctx := context.Background()
 	c, err := google.DefaultClient(ctx, dns.CloudPlatformScope)
@@ -151,6 +159,18 @@ func (client *GoogleDnsDrainer) handleRecordSet(zone string, rec *dns.ResourceRe
 	if err != nil {
 		log.Printf("ERROR - %s: %s", rec.Name, err)
 	}
+}
+
+func filterWithRegex(rec *dns.ResourceRecordSet, regex *regexp.Regexp) []string {
+	res := make([]string, 0)
+
+	for _, x := range rec.Rrdatas {
+		if !regex.MatchString(x) {
+			res = append(res, x)
+		}
+	}
+
+	return res
 }
 
 func filterWithValue(rec *dns.ResourceRecordSet, value string) []string {
