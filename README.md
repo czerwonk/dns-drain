@@ -30,8 +30,8 @@ Name        | Description
 -value | defines which values in records should be matched
 -regex | defines which pattern should be applied to match records
 -dry | simulation only
--zone | apply changes for specific zones only
--skip | skip specific zones
+-zone | apply changes for specific zones only (regular expression)
+-skip | skip specific zones (regular expression)
 -new_ip | set a replacement IP (not compatible with -value and -regex)
 -new_value | set a replacement value (not compatible with -ip)
 -file | input (undrain) or output (drain) file (default: drain.json)
