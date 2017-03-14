@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-const version string = "0.6.0"
+const version string = "0.6.1"
 
 var (
 	showVersion     = flag.Bool("version", false, "Show version information")
@@ -28,6 +28,20 @@ var (
 	zoneFilterRegex *regexp.Regexp
 	skipFilterRegex *regexp.Regexp
 )
+
+func init() {
+	flag.Usage = func() {
+		fmt.Println("Usage: dns-drain [ ... ]\n\nParameters:\n")
+		flag.PrintDefaults()
+		fmt.Println("\n\nExamples:\n")
+		fmt.Println("Drain IP 1.2.3.4 in project api-project-xxx by removing IP from records\n")
+		fmt.Println("  dns-drain -gcloud.project=api-project-xxx -ip=1.2.3.4/32\n")
+		fmt.Println("Drain IP 1.2.3.4 in project api-project-xxx by replacing IP with 1.2.3.5\n")
+		fmt.Println("  dns-drain -gcloud.project=api-project-xxx -ip=1.2.3.4/32 -new_ip=1.2.3.5\n")
+		fmt.Println("Undrain by using json file written in drain process\n")
+		fmt.Println("  dns-drain -undrain -gcloud.project=api-project-xxx")
+	}
+}
 
 func main() {
 	flag.Parse()
