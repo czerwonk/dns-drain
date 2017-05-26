@@ -1,11 +1,11 @@
 # dns-drain [![Build Status](https://travis-ci.org/czerwonk/dns-drain.svg)][travis]
 Drain by removing/replacing IP/net from DNS records with ease
 
-# Install
+## Install
 ```
 go get github.com/czerwonk/dns-drain
 ```
-# Usage
+## Usage
 
 Drain IP 1.2.3.4 in project api-project-xxx by removing IP from records
 ```
@@ -22,7 +22,7 @@ Undrain by using json file written in drain process
 dns-drain -undrain -gcloud.project=api-project-xxx
 ```
 
-# Parameters
+## Parameters
 
 Name        | Description
 ------------|------------
@@ -36,10 +36,13 @@ Name        | Description
 -new_value | set a replacement value (not compatible with -ip)
 -file | input (undrain) or output (drain) file (default: drain.json)
 
-# Supported providers
+## Supported providers
 * Google Cloud DNS
 
-# Future plans
+## Future plans
 * support for more providers
+
+## License
+(c) Daniel Czerwonk, 2016. Licensed under [MIT](LICENSE) license.
 
 [travis]: https://travis-ci.org/czerwonk/dns-drain
