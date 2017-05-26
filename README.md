@@ -3,7 +3,7 @@ Drain by removing/replacing IP/net from DNS records with ease
 
 ## Install
 ```
-go get github.com/czerwonk/dns-drain
+go get -u github.com/czerwonk/dns-drain
 ```
 ## Usage
 
