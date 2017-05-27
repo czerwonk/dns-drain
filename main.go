@@ -17,7 +17,7 @@ var (
 	newIpStr        = flag.String("new_ip", "", "IP to set instead of removed IP")
 	gcloudProject   = flag.String("gcloud.project", "", "Project ID for Google Cloud DNS")
 	dry             = flag.Bool("dry", false, "Do not modify DNS records (simulation only)")
-	zoneFilter      = flag.String("zone", "", "Apply only to zones matching the specifed regex")
+	zoneFilter      = flag.String("zone", "", "Apply only to zones matching the specified regex")
 	skipFilter      = flag.String("skip", "", "Skip zones matching the specified regex")
 	typeFilter      = flag.String("type", "", "Record type to change")
 	file            = flag.String("file", "drain.json", "File containing changes (for log or undrain)")
