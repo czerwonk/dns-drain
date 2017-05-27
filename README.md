@@ -1,4 +1,7 @@
-# dns-drain [![Build Status](https://travis-ci.org/czerwonk/dns-drain.svg)][travis]
+# dns-drain 
+[![Build Status](https://travis-ci.org/czerwonk/dns-drain.svg)][travis]
+[![Go Report Card](https://goreportcard.com/badge/github.com/czerwonk/dns-drain)][goreportcard]
+
 Drain by removing/replacing IP/net from DNS records with ease
 
 ## Install
@@ -46,3 +49,4 @@ Name        | Description
 (c) Daniel Czerwonk, 2016. Licensed under [MIT](LICENSE) license.
 
 [travis]: https://travis-ci.org/czerwonk/dns-drain
+[goreportcard]: https://goreportcard.com/report/github.com/czerwonk/dns-drain
