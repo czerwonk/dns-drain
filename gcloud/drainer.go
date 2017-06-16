@@ -19,6 +19,7 @@ import (
 type GoogleDnsDrainer struct {
 	project    string
 	dryRun     bool
+	force      bool
 	zoneFilter *regexp.Regexp
 	skipFilter *regexp.Regexp
 	typeFilter string
@@ -29,8 +30,10 @@ type GoogleDnsDrainer struct {
 
 type DrainFilter func(*dns.ResourceRecordSet) []string
 
-func NewDrainer(project string, dryRun bool, zoneFilter *regexp.Regexp, skipFilter *regexp.Regexp, typeFilter string, changelogger changelog.ChangeLogger) *GoogleDnsDrainer {
-	return &GoogleDnsDrainer{project: project, dryRun: dryRun, zoneFilter: zoneFilter, typeFilter: typeFilter, skipFilter: skipFilter, logger: changelogger}
+func NewDrainer(project string, dryRun bool, zoneFilter *regexp.Regexp, skipFilter *regexp.Regexp, typeFilter string,
+	changelogger changelog.ChangeLogger, force bool) *GoogleDnsDrainer {
+	return &GoogleDnsDrainer{project: project, dryRun: dryRun, zoneFilter: zoneFilter,
+		typeFilter: typeFilter, skipFilter: skipFilter, logger: changelogger, force: force}
 }
 
 func (client *GoogleDnsDrainer) DrainWithIpNet(ipNet *net.IPNet, newIp net.IP) error {
@@ -142,7 +145,7 @@ func (client *GoogleDnsDrainer) handleRecordSet(zone string, rec *dns.ResourceRe
 
 	d := filter(rec)
 
-	if len(d) == 0 && len(newValue) == 0 {
+	if len(d) == 0 && len(newValue) == 0 && !client.force {
 		log.Printf("WARN - %s %s: Only one value assigned to record. Can not drain!\n", rec.Type, rec.Name)
 		return
 	}

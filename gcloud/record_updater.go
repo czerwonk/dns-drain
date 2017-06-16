@@ -19,7 +19,10 @@ func (u *recordUpdater) updateRecordSet(zone string, rec *dns.ResourceRecordSet,
 	}
 
 	log.Printf("- %s: %s %s\n", rec.Name, rec.Type, rec.Rrdatas)
-	log.Printf("+ %s: %s %s\n", rec.Name, rec.Type, datas)
+
+	if len(datas) > 0 {
+		log.Printf("+ %s: %s %s\n", rec.Name, rec.Type, datas)
+	}
 
 	if u.dryRun {
 		return nil
@@ -28,9 +31,11 @@ func (u *recordUpdater) updateRecordSet(zone string, rec *dns.ResourceRecordSet,
 	c := &dns.Change{Additions: make([]*dns.ResourceRecordSet, 0), Deletions: make([]*dns.ResourceRecordSet, 0)}
 	c.Deletions = append(c.Deletions, rec)
 
-	updated := *rec
-	updated.Rrdatas = datas
-	c.Additions = append(c.Additions, &updated)
+	if len(datas) > 0 {
+		updated := *rec
+		updated.Rrdatas = datas
+		c.Additions = append(c.Additions, &updated)
+	}
 
 	_, err := u.service.Changes.Create(u.project, zone, c).Do()
 	return err

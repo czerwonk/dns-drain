@@ -32,7 +32,9 @@ Name        | Description
 -ip | defines which IPs/nets in records should be matched
 -value | defines which values in records should be matched
 -regex | defines which pattern should be applied to match records
+-type | defines which type of record should be matched
 -dry | simulation only
+-force | deactivates logic checks to remove complete records without replacing
 -zone | apply changes for specific zones only (regular expression)
 -skip | skip specific zones (regular expression)
 -new_ip | set a replacement IP (not compatible with -value and -regex)

@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-const version string = "0.6.1"
+const version string = "0.7.0"
 
 var (
 	showVersion     = flag.Bool("version", false, "Show version information")
@@ -25,6 +25,7 @@ var (
 	value           = flag.String("value", "", "Value to replace/replace in DNS data")
 	regexString     = flag.String("regex", "", "Regex to find data in DNS records to remove/replace")
 	newValue        = flag.String("new_value", "", "Value to replace with in DNS data")
+	force           = flag.Bool("force", false, "Remove value from record even if it is the only value")
 	zoneFilterRegex *regexp.Regexp
 	skipFilterRegex *regexp.Regexp
 )
@@ -49,6 +50,10 @@ func main() {
 
 	if *dry {
 		log.Println("Using dry run. No records will be changed.")
+	}
+
+	if *force {
+		log.Println("Logic check was disabled. There is no guarantee for a consistent result.")
 	}
 
 	start := time.Now()
