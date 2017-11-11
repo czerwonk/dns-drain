@@ -18,11 +18,12 @@ type recordUpdater struct {
 }
 
 func (u *recordUpdater) updateRecordSet(zone string, rec *dns.ResourceRecordSet, datas []string) (bool, error) {
-	if u.limit >= 0 && atomic.LoadInt64(&u.counter) >= u.limit {
+	if reflect.DeepEqual(rec.Rrdatas, datas) {
 		return false, nil
 	}
 
-	if reflect.DeepEqual(rec.Rrdatas, datas) {
+	count := atomic.AddInt64(&u.counter, 1)
+	if u.limit >= 0 && count > u.limit {
 		return false, nil
 	}
 
@@ -33,7 +34,6 @@ func (u *recordUpdater) updateRecordSet(zone string, rec *dns.ResourceRecordSet,
 	}
 
 	if u.dryRun {
-		atomic.AddInt64(&u.counter, 1)
 		return true, nil
 	}
 
@@ -51,6 +51,5 @@ func (u *recordUpdater) updateRecordSet(zone string, rec *dns.ResourceRecordSet,
 		return false, err
 	}
 
-	atomic.AddInt64(&u.counter, 1)
 	return true, nil
 }
