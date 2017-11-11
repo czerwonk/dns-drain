@@ -40,6 +40,7 @@ Name        | Description
 -new_ip | set a replacement IP (not compatible with -value and -regex)
 -new_value | set a replacement value (not compatible with -ip)
 -file | input (undrain) or output (drain) file (default: drain.json)
+-limit | max number of records to change (-1 = unlimited, default -1)
 
 ## Supported providers
 * Google Cloud DNS
