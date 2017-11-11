@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-const version string = "0.7.0"
+const version string = "0.8.0"
 
 var (
 	showVersion     = flag.Bool("version", false, "Show version information")
@@ -26,6 +26,7 @@ var (
 	regexString     = flag.String("regex", "", "Regex to find data in DNS records to remove/replace")
 	newValue        = flag.String("new_value", "", "Value to replace with in DNS data")
 	force           = flag.Bool("force", false, "Remove value from record even if it is the only value")
+	limit           = flag.Int64("limit", -1, "Max number of records to change (-1 = unlimited)")
 	zoneFilterRegex *regexp.Regexp
 	skipFilterRegex *regexp.Regexp
 )
