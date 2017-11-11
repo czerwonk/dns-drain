@@ -76,6 +76,8 @@ func main() {
 func printVersionInfo() {
 	fmt.Println("dns-drain")
 	fmt.Printf("Version: %s\n", version)
+	fmt.Println("Author(s): Daniel Czerwonk")
+	fmt.Println("Drain and undrain frontends by using DNS")
 }
 
 func parseFilterArgs() error {
