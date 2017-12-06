@@ -41,7 +41,7 @@ func (client *GoogleDnsUndrainer) Undrain(changes *changelog.DnsChangeSet) error
 		return err
 	}
 
-	client.updater = &recordUpdater{service: client.service, project: client.project, dryRun: client.dryRun}
+	client.updater = &recordUpdater{service: client.service, project: client.project, dryRun: client.dryRun, limit: client.limit}
 
 	return client.undrain(changes)
 }

@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-const version string = "0.8.0"
+const version string = "0.8.1"
 
 var (
 	showVersion     = flag.Bool("version", false, "Show version information")
