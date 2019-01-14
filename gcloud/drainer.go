@@ -26,14 +26,15 @@ type GoogleDnsDrainer struct {
 	service    *dns.Service
 	logger     changelog.ChangeLogger
 	updater    *recordUpdater
+	limit      int64
 }
 
 type DrainFilter func(*dns.ResourceRecordSet) []string
 
 func NewDrainer(project string, dryRun bool, zoneFilter *regexp.Regexp, skipFilter *regexp.Regexp, typeFilter string,
-	changelogger changelog.ChangeLogger, force bool) *GoogleDnsDrainer {
+	changelogger changelog.ChangeLogger, force bool, limit int64) *GoogleDnsDrainer {
 	return &GoogleDnsDrainer{project: project, dryRun: dryRun, zoneFilter: zoneFilter,
-		typeFilter: typeFilter, skipFilter: skipFilter, logger: changelogger, force: force}
+		typeFilter: typeFilter, skipFilter: skipFilter, logger: changelogger, force: force, limit: limit}
 }
 
 func (client *GoogleDnsDrainer) DrainWithIpNet(ipNet *net.IPNet, newIp net.IP) error {
@@ -77,7 +78,7 @@ func (client *GoogleDnsDrainer) performForZones(filter DrainFilter, newValue str
 		return err
 	}
 
-	client.updater = &recordUpdater{service: client.service, project: client.project, dryRun: client.dryRun}
+	client.updater = &recordUpdater{service: client.service, project: client.project, dryRun: client.dryRun, limit: client.limit}
 
 	zones, err := client.getZones()
 	if err != nil {
@@ -212,12 +213,16 @@ func isInDatas(value string, datas []string) bool {
 }
 
 func (client *GoogleDnsDrainer) updateRecordSet(rec *dns.ResourceRecordSet, zone string, datas []string) error {
-	err := client.updater.updateRecordSet(zone, rec, datas)
+	done, err := client.updater.updateRecordSet(zone, rec, datas)
 	if err != nil {
 		return err
 	}
 
-	return client.logChanges(rec, zone, datas)
+	if done {
+		return client.logChanges(rec, zone, datas)
+	}
+
+	return nil
 }
 
 func (client *GoogleDnsDrainer) logChanges(rec *dns.ResourceRecordSet, zone string, datas []string) error {

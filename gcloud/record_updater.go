@@ -4,6 +4,8 @@ import (
 	"log"
 	"reflect"
 
+	"sync/atomic"
+
 	dns "google.golang.org/api/dns/v1"
 )
 
@@ -11,11 +13,18 @@ type recordUpdater struct {
 	service *dns.Service
 	project string
 	dryRun  bool
+	limit   int64
+	counter int64
 }
 
-func (u *recordUpdater) updateRecordSet(zone string, rec *dns.ResourceRecordSet, datas []string) error {
+func (u *recordUpdater) updateRecordSet(zone string, rec *dns.ResourceRecordSet, datas []string) (bool, error) {
 	if reflect.DeepEqual(rec.Rrdatas, datas) {
-		return nil
+		return false, nil
+	}
+
+	count := atomic.AddInt64(&u.counter, 1)
+	if u.limit >= 0 && count > u.limit {
+		return false, nil
 	}
 
 	log.Printf("- %s: %s %s\n", rec.Name, rec.Type, rec.Rrdatas)
@@ -25,7 +34,7 @@ func (u *recordUpdater) updateRecordSet(zone string, rec *dns.ResourceRecordSet,
 	}
 
 	if u.dryRun {
-		return nil
+		return true, nil
 	}
 
 	c := &dns.Change{Additions: make([]*dns.ResourceRecordSet, 0), Deletions: make([]*dns.ResourceRecordSet, 0)}
@@ -38,5 +47,9 @@ func (u *recordUpdater) updateRecordSet(zone string, rec *dns.ResourceRecordSet,
 	}
 
 	_, err := u.service.Changes.Create(u.project, zone, c).Do()
-	return err
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
 }

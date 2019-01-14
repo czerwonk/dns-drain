@@ -114,7 +114,7 @@ func performDrain(actionFunc DrainActionFunc) error {
 	}
 	defer flushAndCloseLogger(logger)
 
-	c := gcloud.NewDrainer(*gcloudProject, *dry, zoneFilterRegex, skipFilterRegex, *typeFilter, logger, *force)
+	c := gcloud.NewDrainer(*gcloudProject, *dry, zoneFilterRegex, skipFilterRegex, *typeFilter, logger, *force, *limit)
 	return actionFunc(c)
 }
 
