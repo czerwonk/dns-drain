@@ -27,7 +27,9 @@ func (u *recordUpdater) updateRecordSet(zone string, rec *dns.ResourceRecordSet,
 		return false, nil
 	}
 
-	log.Printf("- %s: %s %s\n", rec.Name, rec.Type, rec.Rrdatas)
+	if len(rec.Rrdatas) > 0 {
+		log.Printf("- %s: %s %s\n", rec.Name, rec.Type, rec.Rrdatas)
+	}
 
 	if len(datas) > 0 {
 		log.Printf("+ %s: %s %s\n", rec.Name, rec.Type, datas)
@@ -38,7 +40,9 @@ func (u *recordUpdater) updateRecordSet(zone string, rec *dns.ResourceRecordSet,
 	}
 
 	c := &dns.Change{Additions: make([]*dns.ResourceRecordSet, 0), Deletions: make([]*dns.ResourceRecordSet, 0)}
-	c.Deletions = append(c.Deletions, rec)
+	if len(rec.Rrdatas) > 0 {
+		c.Deletions = append(c.Deletions, rec)
+	}
 
 	if len(datas) > 0 {
 		updated := *rec

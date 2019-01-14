@@ -2,7 +2,6 @@ package gcloud
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"regexp"
@@ -11,6 +10,7 @@ import (
 	"golang.org/x/oauth2/google"
 
 	"github.com/czerwonk/dns-drain/changelog"
+	"github.com/pkg/errors"
 
 	dns "google.golang.org/api/dns/v1"
 )
@@ -53,47 +53,49 @@ func (client *GoogleDnsUndrainer) Undrain(changes *changelog.DnsChangeSet) error
 
 func (client *GoogleDnsUndrainer) undrain(changes *changelog.DnsChangeSet) error {
 	g := changes.GroupByZone()
-	done := make(chan bool)
+	doneCh := make(chan bool)
+	defer close(doneCh)
 
 	for z, c := range g {
-		go client.undrainZone(z, c, done)
+		go client.undrainZone(z, c, doneCh)
 	}
 
+	var err error
 	for i := 0; i < len(g); i++ {
 		select {
-		case <-done:
-		case <-time.After(60 * time.Second):
+		case <-doneCh:
+		case <-time.After(2 * time.Minute):
 			return errors.New(fmt.Sprintln("Timeout exceeded!"))
 		}
 	}
 
-	return nil
+	return err
 }
 
-func (client *GoogleDnsUndrainer) undrainZone(zone string, changes []changelog.DnsChange, done chan bool) error {
-	defer func() { done <- true }()
+func (client *GoogleDnsUndrainer) undrainZone(zone string, changes []changelog.DnsChange, doneCh chan bool) {
+	defer func() { doneCh <- true }()
 
 	if client.skipFilter != nil && client.skipFilter.MatchString(zone) {
-		return nil
+		return
 	}
 
 	if client.zoneFilter != nil && !client.zoneFilter.MatchString(zone) {
-		return nil
+		return
 	}
 
 	res, err := client.service.ResourceRecordSets.List(client.project, zone).Do()
 	if err != nil {
-		return err
+		log.Printf("ERROR - %s: %s\n", zone, err)
+		return
 	}
 
 	for r, c := range groupChanges(changes) {
 		err = client.revertChange(r.record, c, res.Rrsets)
 		if err != nil {
-			return err
+			log.Printf("ERROR - %s: %s\n", zone, err)
+			return
 		}
 	}
-
-	return nil
 }
 
 func groupChanges(changes []changelog.DnsChange) map[groupKey][]changelog.DnsChange {

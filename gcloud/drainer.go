@@ -85,15 +85,17 @@ func (client *GoogleDnsDrainer) performForZones(filter DrainFilter, newValue str
 		return err
 	}
 
-	done := make(chan bool)
+	doneCh := make(chan bool)
+	defer close(doneCh)
+
 	for _, z := range zones {
-		go client.drainForZone(z.Name, filter, newValue, done)
+		go client.drainForZone(z.Name, filter, newValue, doneCh)
 	}
 
 	for i := 0; i < len(zones); i++ {
 		select {
-		case <-done:
-		case <-time.After(60 * time.Second):
+		case <-doneCh:
+		case <-time.After(2 * time.Minute):
 			return errors.New(fmt.Sprintln("Timeout exceeded!"))
 		}
 	}
@@ -125,8 +127,8 @@ func (client *GoogleDnsDrainer) matchesZoneFilter(zone string) bool {
 	return client.zoneFilter == nil || client.zoneFilter.MatchString(zone)
 }
 
-func (client *GoogleDnsDrainer) drainForZone(zone string, filter DrainFilter, newValue string, done chan bool) {
-	defer func() { done <- true }()
+func (client *GoogleDnsDrainer) drainForZone(zone string, filter DrainFilter, newValue string, doneCh chan bool) {
+	defer func() { doneCh <- true }()
 
 	r, err := client.service.ResourceRecordSets.List(client.project, zone).Do()
 	if err != nil {
