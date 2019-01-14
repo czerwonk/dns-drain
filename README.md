@@ -4,6 +4,9 @@
 
 Drain by removing/replacing IP/net from DNS records with ease
 
+## Remarks
+This tool uses GO modules and requires go 1.11+ to build.
+
 ## Install
 ```
 go get -u github.com/czerwonk/dns-drain
