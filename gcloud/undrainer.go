@@ -25,6 +25,11 @@ type GoogleDnsUndrainer struct {
 	limit      int64
 }
 
+type groupKey struct {
+	record     string
+	recordType string
+}
+
 func NewUndrainer(project string, dryRun bool, zoneFilter *regexp.Regexp, skipFilter *regexp.Regexp, limit int64) *GoogleDnsUndrainer {
 	return &GoogleDnsUndrainer{project: project, dryRun: dryRun, zoneFilter: zoneFilter, skipFilter: skipFilter, limit: limit}
 }
@@ -81,8 +86,8 @@ func (client *GoogleDnsUndrainer) undrainZone(zone string, changes []changelog.D
 		return err
 	}
 
-	for r, c := range groupByRecordSet(changes) {
-		err = client.revertChange(r, c, res.Rrsets)
+	for r, c := range groupChanges(changes) {
+		err = client.revertChange(r.record, c, res.Rrsets)
 		if err != nil {
 			return err
 		}
@@ -91,17 +96,21 @@ func (client *GoogleDnsUndrainer) undrainZone(zone string, changes []changelog.D
 	return nil
 }
 
-func groupByRecordSet(changes []changelog.DnsChange) map[string][]changelog.DnsChange {
-	m := make(map[string][]changelog.DnsChange)
+func groupChanges(changes []changelog.DnsChange) map[groupKey][]changelog.DnsChange {
+	m := make(map[groupKey][]changelog.DnsChange)
 	for _, x := range changes {
+		key := groupKey{
+			record:     x.Record,
+			recordType: x.RecordType,
+		}
+
 		var arr []changelog.DnsChange
 		var found bool
-
-		if arr, found = m[x.Record]; !found {
+		if arr, found = m[key]; !found {
 			arr = make([]changelog.DnsChange, 0)
 		}
 
-		m[x.Record] = append(arr, x)
+		m[key] = append(arr, x)
 	}
 
 	return m
@@ -111,7 +120,11 @@ func (client *GoogleDnsUndrainer) revertChange(record string, changes []changelo
 	rec := findRecordSet(record, changes[0].RecordType, records)
 	if rec == nil {
 		log.Printf("WARNING - Record %s not found in zone %s\n", record, changes[0].Zone)
-		return nil
+		rec = &dns.ResourceRecordSet{
+			Name:    record,
+			Type:    changes[0].RecordType,
+			Rrdatas: make([]string, 0),
+		}
 	}
 
 	d := client.getNewDatas(changes, rec)
