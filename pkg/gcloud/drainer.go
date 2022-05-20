@@ -9,37 +9,27 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/czerwonk/dns-drain/changelog"
+	"github.com/czerwonk/dns-drain/pkg/changelog"
+	"github.com/czerwonk/dns-drain/pkg/drain"
 
 	dns "google.golang.org/api/dns/v1"
 )
 
 type GoogleDnsDrainer struct {
-	project    string
-	dryRun     bool
-	force      bool
-	zoneFilter *regexp.Regexp
-	skipFilter *regexp.Regexp
-	typeFilter string
-	service    *dns.Service
-	logger     changelog.ChangeLogger
-	updater    *recordUpdater
-	limit      int64
+	project string
+	service *dns.Service
+	logger  changelog.ChangeLogger
+	updater *recordUpdater
+	opt     *drain.Options
 }
 
 type DrainFilter func(*dns.ResourceRecordSet) []string
 
-func NewDrainer(project string, dryRun bool, zoneFilter *regexp.Regexp, skipFilter *regexp.Regexp, typeFilter string,
-	changelogger changelog.ChangeLogger, force bool, limit int64) *GoogleDnsDrainer {
+func NewDrainer(project string, logger changelog.ChangeLogger, opt *drain.Options) *GoogleDnsDrainer {
 	return &GoogleDnsDrainer{
-		project:    project,
-		dryRun:     dryRun,
-		zoneFilter: zoneFilter,
-		typeFilter: typeFilter,
-		skipFilter: skipFilter,
-		logger:     changelogger,
-		force:      force,
-		limit:      limit,
+		project: project,
+		logger:  logger,
+		opt:     opt,
 	}
 }
 
@@ -83,8 +73,8 @@ func (client *GoogleDnsDrainer) performForZones(filter DrainFilter, newValue str
 	client.updater = &recordUpdater{
 		service: client.service,
 		project: client.project,
-		dryRun:  client.dryRun,
-		limit:   client.limit,
+		dryRun:  client.opt.DryRun,
+		limit:   client.opt.Limit,
 	}
 
 	zones, err := client.getZones()
@@ -127,11 +117,11 @@ func (client *GoogleDnsDrainer) getZones() ([]*dns.ManagedZone, error) {
 }
 
 func (client *GoogleDnsDrainer) matchesSkipFilter(zone string) bool {
-	return client.skipFilter != nil && client.skipFilter.MatchString(zone)
+	return client.opt.SkipFilter != nil && client.opt.SkipFilter.MatchString(zone)
 }
 
 func (client *GoogleDnsDrainer) matchesZoneFilter(zone string) bool {
-	return client.zoneFilter == nil || client.zoneFilter.MatchString(zone)
+	return client.opt.ZoneFilter == nil || client.opt.ZoneFilter.MatchString(zone)
 }
 
 func (client *GoogleDnsDrainer) drainForZone(zone string, filter DrainFilter, newValue string, doneCh chan bool) {
@@ -149,13 +139,13 @@ func (client *GoogleDnsDrainer) drainForZone(zone string, filter DrainFilter, ne
 }
 
 func (client *GoogleDnsDrainer) handleRecordSet(zone string, rec *dns.ResourceRecordSet, newValue string, filter DrainFilter) {
-	if len(client.typeFilter) > 0 && client.typeFilter != rec.Type {
+	if len(client.opt.TypeFilter) > 0 && client.opt.TypeFilter != rec.Type {
 		return
 	}
 
 	d := filter(rec)
 
-	if len(d) == 0 && len(newValue) == 0 && !client.force {
+	if len(d) == 0 && len(newValue) == 0 && !client.opt.Force {
 		log.Printf("WARN - %s %s: Only one value assigned to record. Can not drain!\n", rec.Type, rec.Name)
 		return
 	}

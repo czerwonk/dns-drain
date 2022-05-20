@@ -1,3 +1,2 @@
-.idea
-*.iml
-dns-drain
+cmd/dns-drainctl/dns-drainctl
+*.json
