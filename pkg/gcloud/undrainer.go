@@ -4,23 +4,20 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"regexp"
 	"time"
 
-	"github.com/czerwonk/dns-drain/changelog"
+	"github.com/czerwonk/dns-drain/pkg/changelog"
+	"github.com/czerwonk/dns-drain/pkg/undrain"
 	"github.com/pkg/errors"
 
 	dns "google.golang.org/api/dns/v1"
 )
 
 type GoogleDnsUndrainer struct {
-	project    string
-	dryRun     bool
-	zoneFilter *regexp.Regexp
-	skipFilter *regexp.Regexp
-	service    *dns.Service
-	updater    *recordUpdater
-	limit      int64
+	project string
+	opt     *undrain.Options
+	service *dns.Service
+	updater *recordUpdater
 }
 
 type groupKey struct {
@@ -28,13 +25,10 @@ type groupKey struct {
 	recordType string
 }
 
-func NewUndrainer(project string, dryRun bool, zoneFilter *regexp.Regexp, skipFilter *regexp.Regexp, limit int64) *GoogleDnsUndrainer {
+func NewUndrainer(project string, opt *undrain.Options) *GoogleDnsUndrainer {
 	return &GoogleDnsUndrainer{
-		project:    project,
-		dryRun:     dryRun,
-		zoneFilter: zoneFilter,
-		skipFilter: skipFilter,
-		limit:      limit,
+		project: project,
+		opt:     opt,
 	}
 }
 
@@ -49,8 +43,8 @@ func (client *GoogleDnsUndrainer) Undrain(changes *changelog.DnsChangeSet) error
 	client.updater = &recordUpdater{
 		service: client.service,
 		project: client.project,
-		dryRun:  client.dryRun,
-		limit:   client.limit,
+		dryRun:  client.opt.DryRun,
+		limit:   client.opt.Limit,
 	}
 
 	return client.undrain(changes)
@@ -80,11 +74,11 @@ func (client *GoogleDnsUndrainer) undrain(changes *changelog.DnsChangeSet) error
 func (client *GoogleDnsUndrainer) undrainZone(zone string, changes []changelog.DnsChange, doneCh chan bool) {
 	defer func() { doneCh <- true }()
 
-	if client.skipFilter != nil && client.skipFilter.MatchString(zone) {
+	if client.opt.SkipFilter != nil && client.opt.SkipFilter.MatchString(zone) {
 		return
 	}
 
-	if client.zoneFilter != nil && !client.zoneFilter.MatchString(zone) {
+	if client.opt.ZoneFilter != nil && !client.opt.ZoneFilter.MatchString(zone) {
 		return
 	}
 
