@@ -7,8 +7,6 @@ import (
 	"regexp"
 	"time"
 
-	"golang.org/x/oauth2/google"
-
 	"github.com/czerwonk/dns-drain/changelog"
 	"github.com/pkg/errors"
 
@@ -31,22 +29,29 @@ type groupKey struct {
 }
 
 func NewUndrainer(project string, dryRun bool, zoneFilter *regexp.Regexp, skipFilter *regexp.Regexp, limit int64) *GoogleDnsUndrainer {
-	return &GoogleDnsUndrainer{project: project, dryRun: dryRun, zoneFilter: zoneFilter, skipFilter: skipFilter, limit: limit}
+	return &GoogleDnsUndrainer{
+		project:    project,
+		dryRun:     dryRun,
+		zoneFilter: zoneFilter,
+		skipFilter: skipFilter,
+		limit:      limit,
+	}
 }
 
 func (client *GoogleDnsUndrainer) Undrain(changes *changelog.DnsChangeSet) error {
 	ctx := context.Background()
-	c, err := google.DefaultClient(ctx, dns.CloudPlatformScope)
+	svc, err := dns.NewService(ctx)
 	if err != nil {
 		return err
 	}
+	client.service = svc
 
-	client.service, err = dns.New(c)
-	if err != nil {
-		return err
+	client.updater = &recordUpdater{
+		service: client.service,
+		project: client.project,
+		dryRun:  client.dryRun,
+		limit:   client.limit,
 	}
-
-	client.updater = &recordUpdater{service: client.service, project: client.project, dryRun: client.dryRun, limit: client.limit}
 
 	return client.undrain(changes)
 }

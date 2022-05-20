@@ -9,8 +9,6 @@ import (
 	"regexp"
 	"time"
 
-	"golang.org/x/oauth2/google"
-
 	"github.com/czerwonk/dns-drain/changelog"
 
 	dns "google.golang.org/api/dns/v1"
@@ -33,8 +31,16 @@ type DrainFilter func(*dns.ResourceRecordSet) []string
 
 func NewDrainer(project string, dryRun bool, zoneFilter *regexp.Regexp, skipFilter *regexp.Regexp, typeFilter string,
 	changelogger changelog.ChangeLogger, force bool, limit int64) *GoogleDnsDrainer {
-	return &GoogleDnsDrainer{project: project, dryRun: dryRun, zoneFilter: zoneFilter,
-		typeFilter: typeFilter, skipFilter: skipFilter, logger: changelogger, force: force, limit: limit}
+	return &GoogleDnsDrainer{
+		project:    project,
+		dryRun:     dryRun,
+		zoneFilter: zoneFilter,
+		typeFilter: typeFilter,
+		skipFilter: skipFilter,
+		logger:     changelogger,
+		force:      force,
+		limit:      limit,
+	}
 }
 
 func (client *GoogleDnsDrainer) DrainWithIpNet(ipNet *net.IPNet, newIp net.IP) error {
@@ -68,17 +74,18 @@ func (client *GoogleDnsDrainer) DrainWithRegex(regex *regexp.Regexp, newValue st
 
 func (client *GoogleDnsDrainer) performForZones(filter DrainFilter, newValue string) error {
 	ctx := context.Background()
-	c, err := google.DefaultClient(ctx, dns.CloudPlatformScope)
+	svc, err := dns.NewService(ctx)
 	if err != nil {
 		return err
 	}
+	client.service = svc
 
-	client.service, err = dns.New(c)
-	if err != nil {
-		return err
+	client.updater = &recordUpdater{
+		service: client.service,
+		project: client.project,
+		dryRun:  client.dryRun,
+		limit:   client.limit,
 	}
-
-	client.updater = &recordUpdater{service: client.service, project: client.project, dryRun: client.dryRun, limit: client.limit}
 
 	zones, err := client.getZones()
 	if err != nil {
