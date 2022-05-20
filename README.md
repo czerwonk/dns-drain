@@ -5,7 +5,7 @@
 Drain by removing/replacing IP/net from DNS records with ease
 
 ## Remarks
-This tool uses GO modules and requires go 1.11+ to build.
+This tool uses GO modules and requires go 1.18+ to build.
 
 ## Install
 ```
