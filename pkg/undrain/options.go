@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: (c) 2016 Daniel Czerwonk
+//
+// SPDX-License-Identifier: MIT
+
 package undrain
 
 import "regexp"
