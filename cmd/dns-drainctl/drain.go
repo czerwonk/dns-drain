@@ -10,9 +10,10 @@ import (
 	"net"
 	"regexp"
 
+	"github.com/spf13/cobra"
+
 	"github.com/czerwonk/dns-drain/pkg/changelog"
 	"github.com/czerwonk/dns-drain/pkg/drain"
-	"github.com/spf13/cobra"
 )
 
 type DrainerFunc func(*cobra.Command, changelog.ChangeLogger, *drain.Options) drain.Drainer
@@ -141,7 +142,6 @@ func performDrainWithIPNetwork(ipNet *net.IPNet, replacement string, d drain.Dra
 
 func extractIPNetwork(s string) (*net.IPNet, bool) {
 	_, ipNet, err := net.ParseCIDR(s)
-
 	if err != nil {
 		ipAddr := net.ParseIP(s)
 		if ipAddr == nil {

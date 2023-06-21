@@ -9,9 +9,10 @@ import (
 	"log"
 	"regexp"
 
+	"github.com/spf13/cobra"
+
 	"github.com/czerwonk/dns-drain/pkg/changelog"
 	"github.com/czerwonk/dns-drain/pkg/undrain"
-	"github.com/spf13/cobra"
 )
 
 type UndrainerFunc func(*cobra.Command, *undrain.Options) undrain.Undrainer
@@ -33,7 +34,7 @@ func addUndrainCommand(cmd *cobra.Command, u UndrainerFunc) {
 	cmd.AddCommand(undrainCmd)
 }
 
-func performUndrainCommand(cmd *cobra.Command, args []string, u UndrainerFunc) {
+func performUndrainCommand(cmd *cobra.Command, _ []string, u UndrainerFunc) {
 	f, _ := cmd.PersistentFlags().GetString("file")
 	if len(f) == 0 {
 		cobra.CheckErr(fmt.Errorf("please provide a path for the changelog source file"))
