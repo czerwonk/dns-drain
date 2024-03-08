@@ -5,7 +5,7 @@ go 1.22
 require (
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.8.0
-	google.golang.org/api v0.168.0
+	google.golang.org/api v0.169.0
 )
 
 require (
