@@ -12,7 +12,7 @@ buildGo123Module {
 
   vendorHash = pkgs.lib.fileContents ./go.mod.sri;
 
-  CGO_ENABLED = 0;
+  env.CGO_ENABLED = 0;
 
   meta = with lib; {
     description = "Drain by removing/replacing IP/net from DNS records with ease";
