@@ -12,7 +12,6 @@ import (
 
 	"github.com/czerwonk/dns-drain/pkg/changelog"
 	"github.com/czerwonk/dns-drain/pkg/undrain"
-	"github.com/pkg/errors"
 
 	dns "google.golang.org/api/dns/v1"
 )
@@ -68,7 +67,7 @@ func (client *GoogleDnsUndrainer) undrain(changes *changelog.DnsChangeSet) error
 		select {
 		case <-doneCh:
 		case <-time.After(2 * time.Minute):
-			return errors.New(fmt.Sprintln("Timeout exceeded!"))
+			return fmt.Errorf("timeout exceeded")
 		}
 	}
 

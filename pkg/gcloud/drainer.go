@@ -6,7 +6,6 @@ package gcloud
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -98,7 +97,7 @@ func (client *GoogleDnsDrainer) performForZones(filter DrainFilter, newValue str
 		select {
 		case <-doneCh:
 		case <-time.After(2 * time.Minute):
-			return errors.New(fmt.Sprintln("Timeout exceeded!"))
+			return fmt.Errorf("timeout exceeded")
 		}
 	}
 
