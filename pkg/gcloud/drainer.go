@@ -11,6 +11,7 @@ import (
 	"log"
 	"net"
 	"regexp"
+	"slices"
 	"time"
 
 	"github.com/czerwonk/dns-drain/pkg/changelog"
@@ -93,7 +94,7 @@ func (client *GoogleDnsDrainer) performForZones(filter DrainFilter, newValue str
 		go client.drainForZone(z.Name, filter, newValue, doneCh)
 	}
 
-	for i := 0; i < len(zones); i++ {
+	for range zones {
 		select {
 		case <-doneCh:
 		case <-time.After(2 * time.Minute):
@@ -138,8 +139,16 @@ func (client *GoogleDnsDrainer) drainForZone(zone string, filter DrainFilter, ne
 	}
 
 	for _, rec := range r.Rrsets {
+		if !client.matchesNameFilter(rec.Name) {
+			continue
+		}
+
 		client.handleRecordSet(zone, rec, newValue, filter)
 	}
+}
+
+func (client *GoogleDnsDrainer) matchesNameFilter(name string) bool {
+	return client.opt.NameFilter == nil || client.opt.NameFilter.MatchString(name)
 }
 
 func (client *GoogleDnsDrainer) handleRecordSet(zone string, rec *dns.ResourceRecordSet, newValue string, filter DrainFilter) {
@@ -206,13 +215,7 @@ func filterWithIpNet(rec *dns.ResourceRecordSet, ipNet *net.IPNet) []string {
 }
 
 func isInDatas(value string, datas []string) bool {
-	for _, x := range datas {
-		if x == value {
-			return true
-		}
-	}
-
-	return false
+	return slices.Contains(datas, value)
 }
 
 func (client *GoogleDnsDrainer) updateRecordSet(rec *dns.ResourceRecordSet, zone string, datas []string) error {

@@ -64,7 +64,7 @@ func (client *GoogleDnsUndrainer) undrain(changes *changelog.DnsChangeSet) error
 	}
 
 	var err error
-	for i := 0; i < len(g); i++ {
+	for range len(g) {
 		select {
 		case <-doneCh:
 		case <-time.After(2 * time.Minute):

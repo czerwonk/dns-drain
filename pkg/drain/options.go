@@ -11,6 +11,7 @@ type Options struct {
 	Force      bool
 	ZoneFilter *regexp.Regexp
 	SkipFilter *regexp.Regexp
+	NameFilter *regexp.Regexp
 	TypeFilter string
 	Limit      int64
 }

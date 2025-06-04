@@ -7,7 +7,6 @@ package gcloud
 import (
 	"log"
 	"reflect"
-
 	"sync/atomic"
 
 	dns "google.golang.org/api/dns/v1"

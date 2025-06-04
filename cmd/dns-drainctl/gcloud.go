@@ -14,16 +14,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type gcloudCommand struct {
-}
+type gcloudCommand struct{}
 
-var (
-	gcloudCmd = &cobra.Command{
-		Use:     "google-cloud",
-		Aliases: []string{"gcloud"},
-		Short:   "Drain and undrain DNS records using Google Cloud API",
-	}
-)
+var gcloudCmd = &cobra.Command{
+	Use:     "google-cloud",
+	Aliases: []string{"gcloud"},
+	Short:   "Drain and undrain DNS records using Google Cloud API",
+}
 
 func init() {
 	g := &gcloudCommand{}

@@ -6,7 +6,7 @@ package changelog
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"os"
 )
 
 type FileChangeLog struct {
@@ -18,7 +18,7 @@ func NewFileChangeLog(file string) *FileChangeLog {
 }
 
 func (l *FileChangeLog) GetChanges() (*DnsChangeSet, error) {
-	b, err := ioutil.ReadFile(l.filename)
+	b, err := os.ReadFile(l.filename)
 	if err != nil {
 		return nil, err
 	}

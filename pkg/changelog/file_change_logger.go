@@ -39,7 +39,6 @@ func (l *FileChangeLogger) Flush() error {
 	c := DnsChangeSet{Changes: l.changes}
 
 	b, err := json.Marshal(c)
-
 	if err != nil {
 		return err
 	}

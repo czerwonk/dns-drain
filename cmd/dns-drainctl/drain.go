@@ -31,7 +31,8 @@ func addDrainCommand(cmd *cobra.Command, d DrainerFunc) {
 	drainCmd.PersistentFlags().StringP("file", "f", "drain.json", "Changelog file")
 	drainCmd.PersistentFlags().StringP("zone", "z", "", "Apply only to zones matching the specified regex")
 	drainCmd.PersistentFlags().String("skip", "", "Skip zones matching the specified regex")
-	drainCmd.PersistentFlags().String("type", "", "Record type to change")
+	drainCmd.PersistentFlags().StringP("type", "t", "", "Record type to change")
+	drainCmd.PersistentFlags().String("name", "", "Only change records with this name (regex)")
 	drainCmd.PersistentFlags().Int64("limit", -1, "Max number of records to change (-1 = unlimited)")
 	drainCmd.PersistentFlags().Bool("force", false, "Remove value from record even if it is the only value")
 	drainCmd.PersistentFlags().Bool("use-regex", false, "Regex to find data in DNS records to remove/replace")
@@ -93,6 +94,15 @@ func optionsFromDrainCommand(cmd *cobra.Command) *drain.Options {
 			cobra.CheckErr(fmt.Errorf("invalid skip filter regex: %w", err))
 		}
 		opt.SkipFilter = r
+	}
+
+	nameFilter, _ := cmd.PersistentFlags().GetString("name")
+	if len(nameFilter) > 0 {
+		r, err := regexp.Compile(nameFilter)
+		if err != nil {
+			cobra.CheckErr(fmt.Errorf("invalid name filter regex: %w", err))
+		}
+		opt.NameFilter = r
 	}
 
 	return opt
