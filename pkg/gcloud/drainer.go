@@ -21,7 +21,7 @@ import (
 )
 
 type GoogleDnsDrainer struct {
-	project string
+	cfg     Config
 	service *dns.Service
 	logger  changelog.ChangeLogger
 	updater *recordUpdater
@@ -30,11 +30,11 @@ type GoogleDnsDrainer struct {
 
 type DrainFilter func(*dns.ResourceRecordSet) []string
 
-func NewDrainer(project string, logger changelog.ChangeLogger, opt *drain.Options) *GoogleDnsDrainer {
+func NewDrainer(cfg Config, logger changelog.ChangeLogger, opt *drain.Options) *GoogleDnsDrainer {
 	return &GoogleDnsDrainer{
-		project: project,
-		logger:  logger,
-		opt:     opt,
+		cfg:    cfg,
+		logger: logger,
+		opt:    opt,
 	}
 }
 
@@ -69,7 +69,7 @@ func (client *GoogleDnsDrainer) DrainWithRegex(regex *regexp.Regexp, newValue st
 
 func (client *GoogleDnsDrainer) performForZones(filter DrainFilter, newValue string) error {
 	ctx := context.Background()
-	svc, err := dns.NewService(ctx)
+	svc, err := dns.NewService(ctx, client.cfg.toClientOptions()...)
 	if err != nil {
 		return err
 	}
@@ -77,7 +77,7 @@ func (client *GoogleDnsDrainer) performForZones(filter DrainFilter, newValue str
 
 	client.updater = &recordUpdater{
 		service: client.service,
-		project: client.project,
+		project: client.cfg.Project,
 		dryRun:  client.opt.DryRun,
 		limit:   client.opt.Limit,
 	}
@@ -106,7 +106,7 @@ func (client *GoogleDnsDrainer) performForZones(filter DrainFilter, newValue str
 }
 
 func (client *GoogleDnsDrainer) getZones() ([]*dns.ManagedZone, error) {
-	r, err := client.service.ManagedZones.List(client.project).Do()
+	r, err := client.service.ManagedZones.List(client.cfg.Project).Do()
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +132,7 @@ func (client *GoogleDnsDrainer) matchesZoneFilter(zone string) bool {
 func (client *GoogleDnsDrainer) drainForZone(zone string, filter DrainFilter, newValue string, doneCh chan bool) {
 	defer func() { doneCh <- true }()
 
-	r, err := client.service.ResourceRecordSets.List(client.project, zone).Do()
+	r, err := client.service.ResourceRecordSets.List(client.cfg.Project, zone).Do()
 	if err != nil {
 		log.Printf("ERROR - %s: %s\n", zone, err)
 		return

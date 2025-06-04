@@ -26,24 +26,30 @@ func init() {
 	g := &gcloudCommand{}
 
 	gcloudCmd.PersistentFlags().String("project", "", "Name of the Google Cloud project")
+	gcloudCmd.PersistentFlags().String("credentials-file", "", "Path to the cloud credentials file (if not set, cloud SDK will be used)")
 	addDrainCommand(gcloudCmd, g.drainer)
 	addUndrainCommand(gcloudCmd, g.undrainer)
 }
 
 func (g *gcloudCommand) drainer(cmd *cobra.Command, logger changelog.ChangeLogger, opt *drain.Options) drain.Drainer {
-	project, _ := gcloudCmd.PersistentFlags().GetString("project")
-	if project == "" {
-		cobra.CheckErr(fmt.Errorf("please specify the Google Cloud project"))
-	}
-
-	return gcloud.NewDrainer(project, logger, opt)
+	cfg := configFromArgs()
+	return gcloud.NewDrainer(cfg, logger, opt)
 }
 
 func (g *gcloudCommand) undrainer(cmd *cobra.Command, opt *undrain.Options) undrain.Undrainer {
+	cfg := configFromArgs()
+	return gcloud.NewUndrainer(cfg, opt)
+}
+
+func configFromArgs() gcloud.Config {
 	project, _ := gcloudCmd.PersistentFlags().GetString("project")
 	if project == "" {
 		cobra.CheckErr(fmt.Errorf("please specify the Google Cloud project"))
 	}
 
-	return gcloud.NewUndrainer(project, opt)
+	credentialsFile, _ := gcloudCmd.PersistentFlags().GetString("credentials-file")
+	return gcloud.Config{
+		Project:         project,
+		CredentialsFile: credentialsFile,
+	}
 }

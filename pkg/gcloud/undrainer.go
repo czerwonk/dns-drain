@@ -18,7 +18,7 @@ import (
 )
 
 type GoogleDnsUndrainer struct {
-	project string
+	cfg     Config
 	opt     *undrain.Options
 	service *dns.Service
 	updater *recordUpdater
@@ -29,16 +29,16 @@ type groupKey struct {
 	recordType string
 }
 
-func NewUndrainer(project string, opt *undrain.Options) *GoogleDnsUndrainer {
+func NewUndrainer(cfg Config, opt *undrain.Options) *GoogleDnsUndrainer {
 	return &GoogleDnsUndrainer{
-		project: project,
-		opt:     opt,
+		cfg: cfg,
+		opt: opt,
 	}
 }
 
 func (client *GoogleDnsUndrainer) Undrain(changes *changelog.DnsChangeSet) error {
 	ctx := context.Background()
-	svc, err := dns.NewService(ctx)
+	svc, err := dns.NewService(ctx, client.cfg.toClientOptions()...)
 	if err != nil {
 		return err
 	}
@@ -46,7 +46,7 @@ func (client *GoogleDnsUndrainer) Undrain(changes *changelog.DnsChangeSet) error
 
 	client.updater = &recordUpdater{
 		service: client.service,
-		project: client.project,
+		project: client.cfg.Project,
 		dryRun:  client.opt.DryRun,
 		limit:   client.opt.Limit,
 	}
@@ -86,7 +86,7 @@ func (client *GoogleDnsUndrainer) undrainZone(zone string, changes []changelog.D
 		return
 	}
 
-	res, err := client.service.ResourceRecordSets.List(client.project, zone).Do()
+	res, err := client.service.ResourceRecordSets.List(client.cfg.Project, zone).Do()
 	if err != nil {
 		log.Printf("ERROR - %s: %s\n", zone, err)
 		return
