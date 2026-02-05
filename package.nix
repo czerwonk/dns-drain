@@ -1,12 +1,12 @@
 {
   pkgs,
   lib,
-  buildGo124Module,
+  buildGo125Module,
 }:
 
-buildGo124Module {
+buildGo125Module {
   pname = "dns-drainctl";
-  version = "1.0.2";
+  version = "1.1.0";
 
   src = lib.cleanSource ./.;
 
