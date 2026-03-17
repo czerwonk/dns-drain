@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/spf13/cobra v1.10.2
-	google.golang.org/api v0.271.0
+	google.golang.org/api v0.272.0
 )
 
 require (
