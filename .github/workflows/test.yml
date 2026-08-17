@@ -1,0 +1,15 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    uses: czerwonk/go-ci/.github/workflows/test.yml@v2
+    with:
+      build-command: go build ./...
