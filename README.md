@@ -29,4 +29,4 @@ $ dns-drainctl gcloud --project api-project-xxx undrain -f drain.json
 * support for more providers
 
 ## License
-(c) Daniel Czerwonk, 2016. Licensed under [MIT](LICENSE) license.
+(c) Daniel Brendgen-Czerwonk, 2016. Licensed under [MIT](LICENSE) license.
