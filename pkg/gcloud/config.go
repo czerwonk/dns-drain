@@ -16,7 +16,7 @@ type Config struct {
 func (o Config) toClientOptions() []option.ClientOption {
 	if o.CredentialsFile != "" {
 		return []option.ClientOption{
-			option.WithCredentialsFile(o.CredentialsFile),
+			option.WithAuthCredentialsFile(option.ServiceAccount, o.CredentialsFile),
 		}
 	}
 

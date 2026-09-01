@@ -18,7 +18,7 @@ type FileChangeLogger struct {
 }
 
 func NewFileChangeLogger(filePath string) (*FileChangeLogger, error) {
-	f, err := os.Create(filePath)
+	f, err := os.Create(filePath) // #nosec G304 -- filePath is provided by the local operator via CLI flag, not an external/untrusted source
 	if err != nil {
 		return nil, err
 	}
