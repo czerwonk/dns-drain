@@ -1,6 +1,4 @@
 # dns-drain 
-[![Build Status](https://travis-ci.org/czerwonk/dns-drain.svg)](https://travis-ci.org/czerwonk/dns-drain)
-[![Go Report Card](https://goreportcard.com/badge/github.com/czerwonk/dns-drain)](https://goreportcard.com/report/github.com/czerwonk/dns-drain)
 
 Drain by removing/replacing IP/net from DNS records with ease
 
