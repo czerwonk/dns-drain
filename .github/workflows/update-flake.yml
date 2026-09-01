@@ -2,12 +2,14 @@ name: Nix Flake
 
 on:
   push:
-    tags:
-      - "v*.*.*"
+    branches:
+      - main
+    paths:
+      - go.sum
 
 permissions:
   contents: write
 
 jobs:
-  release:
+  update-flake:
     uses: czerwonk/go-ci/.github/workflows/update-flake.yml@v5
