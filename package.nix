@@ -6,7 +6,7 @@
 
 buildGo125Module {
   pname = "dns-drainctl";
-  version = "1.1.0";
+  version = "1.1.2";
 
   src = lib.cleanSource ./.;
 
