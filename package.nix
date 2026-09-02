@@ -1,10 +1,10 @@
 {
   pkgs,
   lib,
-  buildGo125Module,
+  buildGo126Module,
 }:
 
-buildGo125Module {
+buildGo126Module {
   pname = "dns-drainctl";
   version = "1.1.2";
 
