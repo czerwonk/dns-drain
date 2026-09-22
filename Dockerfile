@@ -3,7 +3,7 @@ ADD . /go/dns-drain/
 WORKDIR /go/dns-drain/cmd/dns-drainctl
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /go/bin/dns-drainctl
 
-FROM alpine:3.24.2@sha256:3cf95fe0816180395592b8373f3ec60663f076127617bbacb4eacf9667afe2e9
+FROM alpine:3.24.2@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6
 WORKDIR /app
 COPY --from=builder /go/bin/dns-drainctl .
 
