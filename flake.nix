@@ -20,10 +20,10 @@
       overlays.default =
         _final: prev:
         let
-          inherit (prev) buildGo126Module callPackage lib;
+          inherit (prev) buildGo127Module callPackage lib;
         in
         {
-          dns-drainctl = callPackage ./package.nix { inherit buildGo126Module lib; };
+          dns-drainctl = callPackage ./package.nix { inherit buildGo127Module lib; };
         };
 
       packages = forAllSystems (system: rec {
